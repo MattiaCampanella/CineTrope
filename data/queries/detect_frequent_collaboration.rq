@@ -1,0 +1,22 @@
+PREFIX : <http://example.org/cinetrope#>
+
+# ETL: "hanno lavorato insieme in più di tre opere" richiede un conteggio.
+# SWRL standard non supporta aggregazioni, quindi il conteggio avviene qui con
+# GROUP BY / HAVING e produce l'asserzione :frequentCollaboration usata dalla
+# regola SWRL per inferire :hasFrequentCollaborator.
+CONSTRUCT {
+  ?person1 :frequentCollaboration ?person2 .
+}
+WHERE {
+  {
+    SELECT ?person1 ?person2 (COUNT(DISTINCT ?work) AS ?sharedWorks)
+    WHERE {
+      { ?work :directedBy ?person1 } UNION { ?work :starring ?person1 }
+      { ?work :directedBy ?person2 } UNION { ?work :starring ?person2 }
+      FILTER (?person1 != ?person2)
+      FILTER (STR(?person1) < STR(?person2))
+    }
+    GROUP BY ?person1 ?person2
+    HAVING (COUNT(DISTINCT ?work) >= 4)
+  }
+}

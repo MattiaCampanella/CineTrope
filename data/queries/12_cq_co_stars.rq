@@ -1,0 +1,13 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Competency question: quali attori hanno recitato insieme?
+SELECT ?actor1 ?name1 ?actor2 ?name2
+WHERE {
+  ?actor1 :coStarsWith ?actor2
+  FILTER (STR(?actor1) < STR(?actor2))
+  OPTIONAL { ?actor1 rdfs:label ?name1 }
+  OPTIONAL { ?actor2 rdfs:label ?name2 }
+}
+ORDER BY ?name1 ?name2
+LIMIT 30

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}CineTrope · Raccomandazioni spiegabili{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <h1>Semantic movie recommender</h1>
+    <p class="lede">
+      Scegli un film e osserva perché CineTrope lo consiglia: tropi condivisi,
+      regia, cast, generi e la fonte di ogni informazione. Ogni spiegazione è
+      un grafo RDF prodotto con una query <code>CONSTRUCT</code>.
+    </p>
+    <form class="film-picker" id="film-picker" action="/" method="get">
+      <label for="film-select">Scegli un film di partenza dal catalogo TMDB</label>
+      <div class="picker-row">
+        <select id="film-select" name="film" aria-label="Film di partenza">
+          <option value="">Seleziona un film…</option>
+          {% for film in films %}
+          <option value="{{ film.film }}" data-year="{{ film.year or '' }}">
+            {{ film.title }}{% if film.year %} ({{ film.year }}){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+        <button class="button button-primary" type="submit">Genera raccomandazioni</button>
+      </div>
+    </form>
+    <p class="hero-note">
+      Il catalogo è materializzato localmente: la demo non dipende da endpoint pubblici.
+    </p>
+  </div>
+  <div class="hero-panel" aria-label="Statistiche del knowledge graph">
+    <p class="panel-kicker">Knowledge graph</p>
+    <div class="stat-grid">
+      <div class="stat">
+        <span>{{ stats.films }}</span>
+        <small>film</small>
+      </div>
+      <div class="stat">
+        <span>{{ stats.people }}</span>
+        <small>persone</small>
+      </div>
+      <div class="stat">
+        <span>{{ stats.tropes }}</span>
+        <small>tropi</small>
+      </div>
+      <div class="stat">
+        <span>{{ stats.inferred_triples|number }}</span>
+        <small>triple inferite</small>
+      </div>
+    </div>
+    <div class="panel-foot">
+      <span>{{ stats.triples|number }} triple totali</span>
+      <span>{{ stats.named_graphs }} named graph</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Percorsi consigliati</p>
+      <h2>Da dove iniziare</h2>
+    </div>
+    <p class="section-note">Sei film con profili semantici molto diversi tra loro.</p>
+  </div>
+  <div class="feature-grid">
+    {% for film in featured %}
+    <a class="feature-card" href="/recommendations/{{ film.film }}">
+      <span class="feature-year">{{ film.year or "—" }}</span>
+      <h3>{{ film.title }}</h3>
+      <p>{{ film.directors or "Regia non disponibile" }}</p>
+      <div class="meta-row">
+        <span>{{ film.tropeCount }} tropi</span>
+        <span>{{ film.genres or "Genere non disponibile" }}</span>
+      </div>
+      <span class="card-arrow">Apri le raccomandazioni →</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section section-split">
+  <div>
+    <p class="eyebrow">Come funziona</p>
+    <h2>Osserva le relazioni</h2>
+    <p class="section-note">
+      Il punteggio combina quattro dimensioni: tropi (3 punti ciascuno,
+      regista (2), attori (2) e generi (5). La spiegazione non è un testo
+      generato a posteriori: è il grafo RDF che collega i due film.
+    </p>
+    <a class="text-link" href="/queries">Guarda le competency questions →</a>
+  </div>
+  <ol class="steps">
+    <li>
+      <span class="step-number">01</span>
+      <div>
+        <strong>Scegli un film</strong>
+        <p>Il catalogo locale contiene film, serie, persone, generi, tropi ed elementi descrittivi importati da TMDB.</p>
+      </div>
+    </li>
+    <li>
+      <span class="step-number">02</span>
+      <div>
+        <strong>Calcola le affinità</strong>
+        <p>SPARQL aggrega tropi, regia, cast e generi con sottoquery indipendenti.</p>
+      </div>
+    </li>
+    <li>
+      <span class="step-number">03</span>
+      <div>
+        <strong>Esplora la prova</strong>
+        <p>Il grafo mostra proprietà condivise, direzione delle relazioni e named graph di provenienza.</p>
+      </div>
+    </li>
+  </ol>
+</section>
+{% endblock %}

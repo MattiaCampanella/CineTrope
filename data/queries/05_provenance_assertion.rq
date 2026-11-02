@@ -1,0 +1,10 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Provenienza di una singola asserzione film-tropo: interroga i named graph.
+SELECT ?source ?sourceLabel
+WHERE {
+  GRAPH ?source { <{{FILM}}> :hasTrope <{{TROPE}}> }
+  ?source rdfs:label ?sourceLabel .
+}
+ORDER BY ?sourceLabel

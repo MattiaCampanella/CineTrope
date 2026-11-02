@@ -1,0 +1,13 @@
+PREFIX : <http://example.org/cinetrope#>
+
+# ETL: materializza collaboratedWith per ogni coppia che ha lavorato sulla
+# stessa opera (registi e attori). Una sola direzione; la simmetria è OWL.
+CONSTRUCT {
+  ?person1 :collaboratedWith ?person2 .
+}
+WHERE {
+  { ?work :directedBy ?person1 } UNION { ?work :starring ?person1 }
+  { ?work :directedBy ?person2 } UNION { ?work :starring ?person2 }
+  FILTER (?person1 != ?person2)
+  FILTER (STR(?person1) < STR(?person2))
+}

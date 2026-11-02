@@ -1,0 +1,10 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Film classificati come MindBender dalle regole SWRL (tipo inferito).
+SELECT ?film ?title
+WHERE {
+  GRAPH :Inferred { ?film a :MindBender }
+  ?film rdfs:label ?title .
+}
+ORDER BY ?title

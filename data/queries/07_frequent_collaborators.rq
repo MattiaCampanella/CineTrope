@@ -1,0 +1,12 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Collaboratori frequenti inferiti dalla regola SWRL hasFrequentCollaborator.
+SELECT ?person1 ?name1 ?person2 ?name2
+WHERE {
+  GRAPH :Inferred { ?person1 :hasFrequentCollaborator ?person2 }
+  FILTER (STR(?person1) < STR(?person2))
+  OPTIONAL { ?person1 rdfs:label ?name1 }
+  OPTIONAL { ?person2 rdfs:label ?name2 }
+}
+ORDER BY ?name1 ?name2

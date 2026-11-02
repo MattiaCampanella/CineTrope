@@ -1,0 +1,14 @@
+PREFIX dbo: <http://dbpedia.org/ontology/>
+
+# ETL federato: arricchisce le persone locali con la data di nascita da DBpedia.
+# La clausola SERVICE rende esplicito il collegamento all'endpoint pubblico; il
+# risultato viene materializzato in data/raw/dbpedia_birthdates.json e poi
+# caricato nel named graph :DBpedia. La demo non esegue query federate a runtime.
+SELECT DISTINCT ?person ?birthDate
+WHERE {
+  VALUES ?person { {{VALUES}} }
+  SERVICE <https://dbpedia.org/sparql> {
+    ?person dbo:birthDate ?birthDate .
+  }
+}
+ORDER BY ?person

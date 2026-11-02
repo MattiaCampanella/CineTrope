@@ -1,0 +1,24 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Catalogo dei film con registi, generi e numero di tropi.
+SELECT ?film ?title ?year
+       (GROUP_CONCAT(DISTINCT ?directorName; separator = ", ") AS ?directors)
+       (GROUP_CONCAT(DISTINCT COALESCE(?genreLabel, ""); separator = ", ") AS ?genres)
+       (COUNT(DISTINCT ?trope) AS ?tropeCount)
+WHERE {
+  ?film a :Film ;
+        rdfs:label ?title .
+  OPTIONAL { ?film :releaseYear ?year }
+  OPTIONAL {
+    ?film :directedBy ?director .
+    ?director rdfs:label ?directorName .
+  }
+  OPTIONAL {
+    ?film :hasGenre ?genre .
+    ?genre rdfs:label ?genreLabel .
+  }
+  OPTIONAL { ?film :hasTrope ?trope }
+}
+GROUP BY ?film ?title ?year
+ORDER BY ?title

@@ -1,0 +1,52 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Dettaglio delle proprietà condivise tra film scelto e film suggerito.
+# Per ogni proprietà restituisce anche il named graph che la asserisce.
+SELECT ?kind ?value ?label ?source ?sourceLabel
+WHERE {
+  {
+    <{{SEED}}> :hasTrope ?value .
+    <{{REC}}> :hasTrope ?value .
+    BIND ("trope" AS ?kind)
+    ?value rdfs:label ?label .
+    OPTIONAL {
+      GRAPH ?source { <{{REC}}> :hasTrope ?value }
+      ?source rdfs:label ?sourceLabel .
+    }
+  }
+  UNION
+  {
+    <{{SEED}}> :directedBy ?value .
+    <{{REC}}> :directedBy ?value .
+    BIND ("director" AS ?kind)
+    ?value rdfs:label ?label .
+    OPTIONAL {
+      GRAPH ?source { <{{REC}}> :directedBy ?value }
+      ?source rdfs:label ?sourceLabel .
+    }
+  }
+  UNION
+  {
+    <{{SEED}}> :starring ?value .
+    <{{REC}}> :starring ?value .
+    BIND ("actor" AS ?kind)
+    ?value rdfs:label ?label .
+    OPTIONAL {
+      GRAPH ?source { <{{REC}}> :starring ?value }
+      ?source rdfs:label ?sourceLabel .
+    }
+  }
+  UNION
+  {
+    <{{SEED}}> :hasGenre ?value .
+    <{{REC}}> :hasGenre ?value .
+    BIND ("genre" AS ?kind)
+    ?value rdfs:label ?label .
+    OPTIONAL {
+      GRAPH ?source { <{{REC}}> :hasGenre ?value }
+      ?source rdfs:label ?sourceLabel .
+    }
+  }
+}
+ORDER BY ?kind ?label

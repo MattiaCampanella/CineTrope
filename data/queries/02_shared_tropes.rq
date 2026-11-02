@@ -1,0 +1,16 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Film ordinati per numero di tropi condivisi con il film scelto.
+# Usa COUNT e GROUP BY, come richiesto per la classifica delle raccomandazioni.
+SELECT ?film ?title (COUNT(DISTINCT ?trope) AS ?sharedTropes)
+WHERE {
+  <{{SEED}}> :hasTrope ?trope .
+  ?film :hasTrope ?trope .
+  ?film a :Film ;
+        rdfs:label ?title .
+  FILTER (?film != <{{SEED}}>)
+}
+GROUP BY ?film ?title
+ORDER BY DESC(COUNT(DISTINCT ?trope)) ?title
+LIMIT {{LIMIT}}

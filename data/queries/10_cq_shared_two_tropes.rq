@@ -1,0 +1,15 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Competency question: quali film condividono almeno due tropi con il film scelto?
+SELECT ?film ?title (COUNT(DISTINCT ?trope) AS ?sharedTropes)
+WHERE {
+  <{{SEED}}> :hasTrope ?trope .
+  ?film :hasTrope ?trope ;
+        a :Film ;
+        rdfs:label ?title .
+  FILTER (?film != <{{SEED}}>)
+}
+GROUP BY ?film ?title
+HAVING (COUNT(DISTINCT ?trope) >= 2)
+ORDER BY DESC(COUNT(DISTINCT ?trope)) ?title

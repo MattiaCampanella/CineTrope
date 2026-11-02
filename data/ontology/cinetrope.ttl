@@ -1,0 +1,279 @@
+@prefix : <http://example.org/cinetrope#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+: a owl:Ontology ;
+    rdfs:label "CineTrope - ontologia per raccomandazioni cinematografiche spiegabili"@it ;
+    rdfs:comment "Ontologia RDFS/OWL per collegare film, serie TV, persone, generi, tropi e scene, mantenendo la provenienza delle asserzioni tramite named graph."@it ;
+    owl:versionInfo "1.0.0" .
+
+############################################################
+# Classi
+############################################################
+
+:OperaAudiovisiva a owl:Class ;
+    rdfs:label "Opera audiovisiva"@it ;
+    rdfs:comment "Superclasse comune di film e serie TV."@it .
+
+:Film a owl:Class ;
+    rdfs:subClassOf :OperaAudiovisiva ;
+    owl:disjointWith :SerieTV ;
+    rdfs:label "Film"@it ;
+    rdfs:comment "Un film è un'opera audiovisiva e non può essere anche una serie TV."@it .
+
+:SerieTV a owl:Class ;
+    rdfs:subClassOf :OperaAudiovisiva ;
+    rdfs:label "Serie TV"@it .
+
+:Movie a owl:Class ;
+    owl:equivalentClass :Film ;
+    rdfs:label "Movie"@en ;
+    rdfs:comment "Allineamento terminologico usato da vocabolari esterni."@it .
+
+:TVSeries a owl:Class ;
+    owl:equivalentClass :SerieTV ;
+    rdfs:label "TV Series"@en .
+
+:Persona a owl:Class ;
+    rdfs:label "Persona"@it .
+
+:Regista a owl:Class ;
+    rdfs:subClassOf :Persona ;
+    rdfs:label "Regista"@it .
+
+:Attore a owl:Class ;
+    rdfs:subClassOf :Persona ;
+    rdfs:label "Attore/Attrice"@it .
+
+:Genere a owl:Class ;
+    rdfs:label "Genere"@it ;
+    rdfs:comment "I generi sono modellati come classi (per la gerarchia rdfs:subClassOf) e, tramite punning OWL 2, anche come individui di :Genere per l'uso della proprietà :hasGenre."@it .
+
+:Tropo a owl:Class ;
+    rdfs:label "Tropo narrativo"@it .
+
+:ElementoDescrittivo a owl:Class ;
+    rdfs:label "Elemento descrittivo"@it ;
+    rdfs:comment "Keyword TMDB non classificata come tropo narrativo: ambientazione, personaggio, oggetto o contesto."@it .
+
+:Scena a owl:Class ;
+    rdfs:label "Scena"@it .
+
+:Fonte a owl:Class ;
+    rdfs:label "Fonte"@it ;
+    rdfs:comment "Risorsa usata anche come nome del named graph che contiene le asserzioni."@it .
+
+:MindBender a owl:Class ;
+    rdfs:subClassOf :Film ;
+    rdfs:label "Mind-bender"@en ;
+    rdfs:comment "Classe derivata dalla regola SWRL: un film con UnreliableNarrator e TwistEnding è un MindBender."@it .
+
+############################################################
+# Proprietà
+############################################################
+
+:hasGenre a owl:ObjectProperty ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range :Genere ;
+    rdfs:label "ha genere"@it .
+
+:subGenreOf a owl:ObjectProperty , owl:TransitiveProperty ;
+    rdfs:domain :Genere ;
+    rdfs:range :Genere ;
+    rdfs:label "sottogenere di"@it .
+
+:directedBy a owl:ObjectProperty ;
+    owl:inverseOf :directorOf ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range :Regista ;
+    rdfs:label "diretto da"@it .
+
+:directorOf a owl:ObjectProperty ;
+    owl:inverseOf :directedBy ;
+    rdfs:domain :Regista ;
+    rdfs:range :OperaAudiovisiva ;
+    rdfs:label "regista di"@it .
+
+:actedIn a owl:ObjectProperty ;
+    owl:inverseOf :starring ;
+    rdfs:domain :Attore ;
+    rdfs:range :OperaAudiovisiva ;
+    rdfs:label "ha recitato in"@it .
+
+:starring a owl:ObjectProperty ;
+    owl:inverseOf :actedIn ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range :Attore ;
+    rdfs:label "interpretato da"@it .
+
+:coStarsWith a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :Attore ;
+    rdfs:range :Attore ;
+    rdfs:label "recita insieme a"@it .
+
+:hasTrope a owl:ObjectProperty ;
+    owl:inverseOf :tropeUsedIn ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range :Tropo ;
+    rdfs:label "usa il tropo"@it .
+
+:usesTrope a owl:ObjectProperty ;
+    owl:equivalentProperty :hasTrope ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range :Tropo ;
+    rdfs:label "usa il tropo (vocabolario alternativo)"@it .
+
+:tropeUsedIn a owl:ObjectProperty ;
+    owl:inverseOf :hasTrope ;
+    rdfs:domain :Tropo ;
+    rdfs:range :OperaAudiovisiva ;
+    rdfs:label "tropo usato in"@it .
+
+:hasElement a owl:ObjectProperty ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range :ElementoDescrittivo ;
+    rdfs:label "ha elemento descrittivo"@it .
+
+:elementUsedIn a owl:ObjectProperty ;
+    owl:inverseOf :hasElement ;
+    rdfs:domain :ElementoDescrittivo ;
+    rdfs:range :OperaAudiovisiva ;
+    rdfs:label "elemento descrittivo presente in"@it .
+
+:hasScene a owl:ObjectProperty ;
+    owl:inverseOf :sceneIn ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range :Scena ;
+    rdfs:label "contiene la scena"@it .
+
+:sceneIn a owl:ObjectProperty ;
+    owl:inverseOf :hasScene ;
+    rdfs:domain :Scena ;
+    rdfs:range :OperaAudiovisiva ;
+    rdfs:label "scena presente in"@it .
+
+:annotatedWith a owl:ObjectProperty ;
+    rdfs:domain :Scena ;
+    rdfs:range :Tropo ;
+    rdfs:label "annotata con"@it .
+
+:statedBy a owl:ObjectProperty ;
+    rdfs:domain :Scena ;
+    rdfs:range :Fonte ;
+    rdfs:label "dichiarata da"@it .
+
+:collaboratedWith a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :Persona ;
+    rdfs:range :Persona ;
+    rdfs:label "ha collaborato con"@it .
+
+:frequentCollaboration a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :Persona ;
+    rdfs:range :Persona ;
+    rdfs:label "collaborazione frequente"@it ;
+    rdfs:comment "Asserita durante l'ETL quando due persone hanno lavorato insieme in più di tre opere."@it .
+
+:hasFrequentCollaborator a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :Persona ;
+    rdfs:range :Persona ;
+    rdfs:label "ha un collaboratore frequente"@it ;
+    rdfs:comment "Proprietà inferita dalla regola SWRL sulle collaborazioni frequenti."@it .
+
+:releaseYear a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range xsd:gYear ;
+    rdfs:label "anno di uscita"@it .
+
+:birthDate a owl:DatatypeProperty ;
+    rdfs:domain :Persona ;
+    rdfs:range xsd:date ;
+    rdfs:label "data di nascita"@it .
+
+############################################################
+# Proprietà usate dal grafo di spiegazione (CONSTRUCT)
+############################################################
+
+:recommends a owl:ObjectProperty ;
+    rdfs:domain :Film ;
+    rdfs:range :Film ;
+    rdfs:label "raccomanda"@it .
+
+:recommendedBecause a owl:ObjectProperty ;
+    rdfs:domain :Film ;
+    rdfs:range :Tropo ;
+    rdfs:label "raccomandato per il tropo"@it .
+
+:sharesTropeWith a owl:ObjectProperty ;
+    rdfs:domain :Film ;
+    rdfs:range :Film ;
+    rdfs:label "condivide un tropo con"@it .
+
+:sharesDirectorWith a owl:ObjectProperty ;
+    rdfs:domain :Film ;
+    rdfs:range :Film ;
+    rdfs:label "condivide il regista con"@it .
+
+:sharesActorWith a owl:ObjectProperty ;
+    rdfs:domain :Film ;
+    rdfs:range :Film ;
+    rdfs:label "condivide un attore con"@it .
+
+:sharesGenreWith a owl:ObjectProperty ;
+    rdfs:domain :Film ;
+    rdfs:range :Film ;
+    rdfs:label "condivide un genere con"@it .
+
+:assertedIn a owl:ObjectProperty ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range :Fonte ;
+    rdfs:label "asserito nella fonte"@it .
+
+############################################################
+# Restrizioni OWL
+############################################################
+
+:Film rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty :directedBy ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+:Film rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty :releaseYear ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+############################################################
+# Fonti / named graph
+############################################################
+
+:Wikidata a :Fonte ;
+    rdfs:label "Wikidata"@en ;
+    rdfs:comment "Metadati strutturati di film, persone e generi."@it .
+
+:DBpedia a :Fonte ;
+    rdfs:label "DBpedia"@en ;
+    rdfs:comment "Arricchimento delle persone, per esempio la data di nascita."@it .
+
+:TvTropes a :Fonte ;
+    rdfs:label "TV Tropes"@en ;
+    rdfs:comment "Tropi narrativi e annotazioni delle scene."@it .
+
+:TMDB a :Fonte ;
+    rdfs:label "TMDB"@en ;
+    rdfs:comment "Metadati e keyword importati automaticamente da TMDB."@it .
+
+:LocalAnalysis a :Fonte ;
+    rdfs:label "Analisi locale"@it ;
+    rdfs:comment "Tropi e gerarchie curati nel dataset locale."@it .
+
+:Derived a :Fonte ;
+    rdfs:label "Dati derivati"@it ;
+    rdfs:comment "Collaborazioni e co-presenze calcolate con query SPARQL durante l'ETL."@it .
+
+:Inferred a :Fonte ;
+    rdfs:label "Inferenze"@it ;
+    rdfs:comment "Triple prodotte dal reasoner OWL RL e dal motore SWRL."@it .

@@ -1,0 +1,49 @@
+@prefix : <http://example.org/cinetrope#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix swrl: <http://www.w3.org/2003/11/swrl#> .
+
+:MindBenderRule a swrl:Imp ;
+    rdfs:label "Un film con narratore inaffidabile e finale a sorpresa è un MindBender"@it ;
+    swrl:body (
+        [ a swrl:ClassAtom ;
+          swrl:classPredicate :Film ;
+          swrl:argument1 ?f ]
+        [ a swrl:IndividualPropertyAtom ;
+          swrl:propertyPredicate :hasTrope ;
+          swrl:argument1 ?f ;
+          swrl:argument2 :UnreliableNarrator ]
+        [ a swrl:IndividualPropertyAtom ;
+          swrl:propertyPredicate :hasTrope ;
+          swrl:argument1 ?f ;
+          swrl:argument2 :TwistEnding ]
+    ) ;
+    swrl:head (
+        [ a swrl:ClassAtom ;
+          swrl:classPredicate :MindBender ;
+          swrl:argument1 ?f ]
+    ) .
+
+:FrequentCollaboratorRule a swrl:Imp ;
+    rdfs:label "Una collaborazione frequente diventa un collegamento hasFrequentCollaborator"@it ;
+    swrl:body (
+        [ a swrl:ClassAtom ;
+          swrl:classPredicate :Persona ;
+          swrl:argument1 ?p1 ]
+        [ a swrl:ClassAtom ;
+          swrl:classPredicate :Persona ;
+          swrl:argument1 ?p2 ]
+        [ a swrl:IndividualPropertyAtom ;
+          swrl:propertyPredicate :collaboratedWith ;
+          swrl:argument1 ?p1 ;
+          swrl:argument2 ?p2 ]
+        [ a swrl:IndividualPropertyAtom ;
+          swrl:propertyPredicate :frequentCollaboration ;
+          swrl:argument1 ?p1 ;
+          swrl:argument2 ?p2 ]
+    ) ;
+    swrl:head (
+        [ a swrl:IndividualPropertyAtom ;
+          swrl:propertyPredicate :hasFrequentCollaborator ;
+          swrl:argument1 ?p1 ;
+          swrl:argument2 ?p2 ]
+    ) .

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Query e competency questions · CineTrope{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">SPARQL · OWL · SWRL</p>
+  <h1>Le domande a cui il grafo risponde</h1>
+  <p class="lede">
+    Nove competency questions eseguite sul triple store locale. Ogni scheda
+    mostra il risultato, la query commentata e il tipo di tecnica semantica
+    coinvolta: aggregazioni, path, named graph, inferenza o regole.
+  </p>
+  <div class="head-actions">
+    <a class="button button-ghost" href="/api/competency-questions" target="_blank" rel="noreferrer">JSON completo</a>
+    <a class="button button-ghost" href="/sources">Vedi le fonti</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="cq-list">
+    {% for cq in questions %}
+    <article class="cq-card" id="{{ cq.id }}">
+      <header class="cq-head">
+        <div>
+          <span class="cq-id">{{ cq.id|upper }}</span>
+          <h2>{{ cq.title }}</h2>
+          <p class="cq-question">{{ cq.question }}</p>
+        </div>
+        <div class="cq-meta">
+          <span class="badge">{{ cq.rows|length }} righe</span>
+          {% if cq.error %}
+          <span class="badge badge-error">Errore</span>
+          {% else %}
+          <span class="badge badge-ok">Eseguita</span>
+          {% endif %}
+        </div>
+      </header>
+      <p class="cq-note">{{ cq.note }}</p>
+
+      {% if cq.error %}
+      <div class="error-box">{{ cq.error }}</div>
+      {% else %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              {% for column in cq.columns %}
+              <th>{{ column }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in cq.rows %}
+            <tr>
+              {% for column in cq.columns %}
+              <td>{{ row.get(column, "") }}</td>
+              {% endfor %}
+            </tr>
+            {% else %}
+            <tr><td colspan="{{ cq.columns|length }}">Nessun risultato.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      <details class="query-details">
+        <summary>Mostra la query SPARQL</summary>
+        <pre class="code-block">{{ cq.query_text }}</pre>
+      </details>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

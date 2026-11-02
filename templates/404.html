@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Non trovato · CineTrope{% endblock %}
+{% block content %}
+<section class="empty-state large">
+  <p class="eyebrow">404</p>
+  <h1>Nessun film su questa pellicola</h1>
+  <p>{{ message }}</p>
+  <a class="button button-primary" href="/">Torna al catalogo</a>
+</section>
+{% endblock %}

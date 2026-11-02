@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CineTrope: raccomandazioni cinematografiche spiegabili con ontologie, SWRL e named graph.">
+  <title>{% block title %}CineTrope{% endblock %}</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="brand" href="/">
+        <span class="brand-mark">CT</span>
+        <span class="brand-text">
+          <strong>CineTrope</strong>
+          <small>Recommender semantico spiegabile</small>
+        </span>
+      </a>
+      <nav class="main-nav" aria-label="Navigazione principale">
+        <a href="/" class="{{ 'is-active' if active == 'home' else '' }}">Raccomanda</a>
+        <a href="/queries" class="{{ 'is-active' if active == 'queries' else '' }}">Query e CQ</a>
+        <a href="/sources" class="{{ 'is-active' if active == 'sources' else '' }}">Fonti</a>
+        <a href="/docs" target="_blank" rel="noreferrer">API</a>
+      </nav>
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+      <div>
+        <strong>CineTrope</strong>
+        <span>Ontologia OWL, regole SWRL, SPARQL e provenienza su named graph.</span>
+      </div>
+      <div class="footer-links">
+        <a href="/queries">Competency questions</a>
+        <a href="/sources">Provenienza</a>
+        <a href="/health">Health</a>
+      </div>
+    </footer>
+  </div>
+  <script src="/static/app.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

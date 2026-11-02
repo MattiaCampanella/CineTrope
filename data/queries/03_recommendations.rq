@@ -1,0 +1,63 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# I pesi vengono passati dal preset scelto nella pagina.
+# Le quattro dimensioni sono calcolate con sottoquery COUNT DISTINCT e poi unite
+# sul film, evitando prodotti cartesiani tra le dimensioni.
+SELECT ?film ?title ?year
+       (COALESCE(?sharedTropes, 0) AS ?sharedTropes)
+       (COALESCE(?sharedDirectors, 0) AS ?sharedDirectors)
+       (COALESCE(?sharedActors, 0) AS ?sharedActors)
+       (COALESCE(?sharedGenres, 0) AS ?sharedGenres)
+       (COALESCE(?sharedTropes, 0) * {{TROPE_WEIGHT}}
+        + COALESCE(?sharedDirectors, 0) * {{DIRECTOR_WEIGHT}}
+        + COALESCE(?sharedActors, 0) * {{ACTOR_WEIGHT}}
+        + COALESCE(?sharedGenres, 0) * {{GENRE_WEIGHT}} AS ?score)
+WHERE {
+  ?film a :Film ;
+        rdfs:label ?title .
+  FILTER (?film != <{{SEED}}>)
+  OPTIONAL { ?film :releaseYear ?year }
+
+  OPTIONAL {
+    SELECT ?film (COUNT(DISTINCT ?trope) AS ?sharedTropes)
+    WHERE {
+      <{{SEED}}> :hasTrope ?trope .
+      ?film :hasTrope ?trope .
+      FILTER (?film != <{{SEED}}>)
+    }
+    GROUP BY ?film
+  }
+
+  OPTIONAL {
+    SELECT ?film (COUNT(DISTINCT ?director) AS ?sharedDirectors)
+    WHERE {
+      <{{SEED}}> :directedBy ?director .
+      ?film :directedBy ?director .
+      FILTER (?film != <{{SEED}}>)
+    }
+    GROUP BY ?film
+  }
+
+  OPTIONAL {
+    SELECT ?film (COUNT(DISTINCT ?actor) AS ?sharedActors)
+    WHERE {
+      <{{SEED}}> :starring ?actor .
+      ?film :starring ?actor .
+      FILTER (?film != <{{SEED}}>)
+    }
+    GROUP BY ?film
+  }
+
+  OPTIONAL {
+    SELECT ?film (COUNT(DISTINCT ?genre) AS ?sharedGenres)
+    WHERE {
+      <{{SEED}}> :hasGenre ?genre .
+      ?film :hasGenre ?genre .
+      FILTER (?film != <{{SEED}}>)
+    }
+    GROUP BY ?film
+  }
+}
+ORDER BY DESC(?score) DESC(?sharedTropes) ?title
+LIMIT {{LIMIT}}

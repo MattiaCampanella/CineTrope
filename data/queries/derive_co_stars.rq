@@ -1,0 +1,10 @@
+PREFIX : <http://example.org/cinetrope#>
+
+# ETL: materializza la simmetrica coStarsWith tra attori dello stesso film.
+CONSTRUCT {
+  ?actor1 :coStarsWith ?actor2 .
+}
+WHERE {
+  ?work :starring ?actor1, ?actor2 .
+  FILTER (STR(?actor1) < STR(?actor2))
+}

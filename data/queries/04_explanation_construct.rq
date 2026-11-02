@@ -1,0 +1,82 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Grafo di spiegazione della raccomandazione, prodotto con CONSTRUCT.
+# Ogni ramo UNION collega il film suggerito a una proprietà condivisa e alla
+# fonte (named graph) che asserisce il fatto. Il risultato è la rete navigabile
+# mostrata nell'interfaccia con vis.js.
+CONSTRUCT {
+  <{{SEED}}> :recommends <{{REC}}> .
+  <{{SEED}}> ?sharePredicate <{{REC}}> .
+
+  <{{REC}}> :recommendedBecause ?trope .
+  <{{SEED}}> :hasTrope ?trope .
+  <{{REC}}> :hasTrope ?trope .
+  <{{REC}}> :assertedIn ?source .
+  ?trope :assertedIn ?source .
+
+  <{{SEED}}> :directedBy ?director .
+  <{{REC}}> :directedBy ?director .
+  ?director :assertedIn ?source .
+
+  <{{SEED}}> :starring ?actor .
+  <{{REC}}> :starring ?actor .
+  ?actor :assertedIn ?source .
+
+  <{{SEED}}> :hasGenre ?genre .
+  <{{REC}}> :hasGenre ?genre .
+  ?genre :assertedIn ?source .
+
+  <{{SEED}}> rdfs:label ?seedLabel .
+  <{{REC}}> rdfs:label ?recLabel .
+  ?trope rdfs:label ?tropeLabel .
+  ?director rdfs:label ?directorLabel .
+  ?actor rdfs:label ?actorLabel .
+  ?genre rdfs:label ?genreLabel .
+  ?source rdfs:label ?sourceLabel .
+}
+WHERE {
+  <{{SEED}}> rdfs:label ?seedLabel .
+  <{{REC}}> rdfs:label ?recLabel .
+
+  {
+    GRAPH ?source { <{{REC}}> :hasTrope ?trope }
+    BIND (:sharesTropeWith AS ?sharePredicate)
+    ?trope rdfs:label ?tropeLabel .
+    ?source rdfs:label ?sourceLabel .
+    FILTER (?source IN (:Wikidata, :DBpedia, :TvTropes, :LocalAnalysis))
+  }
+  UNION
+  {
+    GRAPH ?source {
+      <{{SEED}}> :directedBy ?director .
+      <{{REC}}> :directedBy ?director .
+    }
+    BIND (:sharesDirectorWith AS ?sharePredicate)
+    ?director rdfs:label ?directorLabel .
+    ?source rdfs:label ?sourceLabel .
+    FILTER (?source IN (:Wikidata, :DBpedia, :TvTropes, :LocalAnalysis))
+  }
+  UNION
+  {
+    GRAPH ?source {
+      <{{SEED}}> :starring ?actor .
+      <{{REC}}> :starring ?actor .
+    }
+    BIND (:sharesActorWith AS ?sharePredicate)
+    ?actor rdfs:label ?actorLabel .
+    ?source rdfs:label ?sourceLabel .
+    FILTER (?source IN (:Wikidata, :DBpedia, :TvTropes, :LocalAnalysis))
+  }
+  UNION
+  {
+    GRAPH ?source {
+      <{{SEED}}> :hasGenre ?genre .
+      <{{REC}}> :hasGenre ?genre .
+    }
+    BIND (:sharesGenreWith AS ?sharePredicate)
+    ?genre rdfs:label ?genreLabel .
+    ?source rdfs:label ?sourceLabel .
+    FILTER (?source IN (:Wikidata, :DBpedia, :TvTropes, :LocalAnalysis))
+  }
+}

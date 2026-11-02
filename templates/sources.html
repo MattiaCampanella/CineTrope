@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Fonti e provenienza · CineTrope{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Named graph · provenienza</p>
+  <h1>Da dove arrivano le asserzioni</h1>
+  <p class="lede">
+    CineTrope non usa la reificazione per la provenienza ordinaria: ogni fonte
+    è un named graph. Una query <code>GRAPH ?source { ... }</code> restituisce
+    contemporaneamente il fatto e il grafo che lo contiene.
+  </p>
+  <div class="head-actions">
+    <a class="button button-ghost" href="/api/stats" target="_blank" rel="noreferrer">Statistiche JSON</a>
+    <a class="button button-ghost" href="/queries">Torna alle query</a>
+  </div>
+</section>
+
+<section class="metric-strip">
+  <div><span>{{ stats.triples|number }}</span><small>triple totali</small></div>
+  <div><span>{{ stats.inferred_triples|number }}</span><small>triple inferite</small></div>
+  <div><span>{{ stats.named_graphs }}</span><small>named graph</small></div>
+  <div><span>{{ stats.sources }}</span><small>fonti dichiarate</small></div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Contributo per grafo</p>
+      <h2>Le fonti del knowledge graph</h2>
+    </div>
+    <p class="section-note">Conteggio delle triple asserite in ciascun named graph.</p>
+  </div>
+  <div class="source-grid">
+    {% for source in sources %}
+    <article class="source-card">
+      <div class="source-card-top">
+        <span class="source-dot"></span>
+        <span class="badge">{{ source.triples|number }} triple</span>
+      </div>
+      <h3>{{ source.sourceLabel or source.source|source_label }}</h3>
+      <p class="source-id"><code>:{{ source.source }}</code></p>
+      <p class="microcopy">
+        {% if source.source == "Wikidata" %}
+        Titoli, anni, regia, cast e generi materializzati dal sottoinsieme Wikidata.
+        {% elif source.source == "DBpedia" %}
+        Metadati biografici delle persone, incluse le date di nascita.
+        {% elif source.source == "TMDB" %}
+        Metadati e keyword importati automaticamente da TMDB.
+        {% elif source.source == "TvTropes" %}
+        Fonte legacy non usata dal flusso TMDB.
+        {% elif source.source == "LocalAnalysis" %}
+        Vocabolario ontologico e dati legacy in fase di migrazione.
+        {% elif source.source == "Derived" %}
+        Relazioni calcolate dall'ETL: co-star, collaborazioni e collaborazioni frequenti.
+        {% elif source.source == "Inferred" %}
+        Chiusura OWL RL e conseguenze delle regole SWRL, separate dai dati espliciti.
+        {% else %}
+        Named graph registrato nell'ontologia.
+        {% endif %}
+      </p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section section-split">
+  <div>
+    <p class="eyebrow">Modello</p>
+    <h2>Perché i named graph</h2>
+    <p class="section-note">
+      La reificazione standard richiederebbe quattro triple per ogni asserzione
+      e renderebbe le query molto più verbose. Con i named graph la provenienza
+      resta implicita nel contesto della quadrupla:
+    </p>
+    <pre class="code-block">GRAPH :TMDB {
+  :TMDB27205 :hasTrope :dreams .
+}
+
+SELECT ?source WHERE {
+  GRAPH ?source {
+    :TMDB27205 :hasTrope :dreams
+  }
+}</pre>
+  </div>
+  <div class="info-panel">
+    <h3>Separazione dei livelli</h3>
+    <ul class="plain-list">
+      <li><span>Ontologia</span><strong>:Ontology</strong></li>
+      <li><span>Dati di fonte</span><strong>Wikidata, DBpedia, TMDB</strong></li>
+      <li><span>Dati derivati</span><strong>:Derived</strong></li>
+      <li><span>Inferenze</span><strong>:Inferred</strong></li>
+    </ul>
+    <p class="microcopy">
+      Le triple inferite non sovrascrivono i dati espliciti: vengono isolate,
+      così la demo può mostrare che cosa ha prodotto il reasoner.
+    </p>
+  </div>
+</section>
+{% endblock %}

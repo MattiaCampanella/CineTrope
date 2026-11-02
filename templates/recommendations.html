@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}{{ film.title }} · CineTrope{% endblock %}
+{% block content %}
+<section class="detail-hero">
+  <div class="detail-head">
+    <a class="back-link" href="/">← Cambia film</a>
+    <div class="title-line">
+      <p class="eyebrow">Raccomandazioni per</p>
+      <h1>{{ film.title }} <span class="year">{{ film.year or "" }}</span></h1>
+      <div class="badge-row">
+        <span class="badge">{{ film.type }}</span>
+        {% if film.is_mindbender %}
+        <span class="badge badge-inferred">MindBender · SWRL</span>
+        {% endif %}
+        {% for genre in film.genres %}
+        <span class="badge badge-muted">{{ genre.label }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="detail-meta">
+      <div>
+        <small>Regia</small>
+        <strong>{{ film.directors|map(attribute='label')|join(', ') or "—" }}</strong>
+      </div>
+      <div>
+        <small>Cast principale</small>
+        <strong>{{ film.actors[:4]|map(attribute='label')|join(', ') }}{% if film.actors|length > 4 %} e altri{% endif %}</strong>
+      </div>
+    </div>
+  </div>
+
+  <aside class="seed-tropes">
+    <p class="panel-kicker">Tropi del film</p>
+    <div class="trope-list">
+      {% for trope in film.tropes %}
+      <span class="trope-chip">
+        {{ trope.label }}
+        {% if trope.sources %}
+        <small>{{ trope.sources|map(attribute='label')|join(' · ') }}</small>
+        {% endif %}
+      </span>
+      {% endfor %}
+    </div>
+    <p class="microcopy">La provenienza è letta dai named graph, non da un campo separato.</p>
+    {% if film.elements %}
+    <p class="panel-kicker">Elementi descrittivi</p>
+    <div class="trope-list">
+      {% for element in film.elements %}
+      <span class="trope-chip">
+        {{ element.label }}
+        {% if element.sources %}
+        <small>{{ element.sources|map(attribute='label')|join(' · ') }}</small>
+        {% endif %}
+      </span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </aside>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Top 5</p>
+      <h2>Perché questi film</h2>
+    </div>
+    <p class="section-note">
+      Ordinati con il preset <strong>{{ priorities[priority] }}</strong>.
+    </p>
+  </div>
+  <nav class="priority-switcher" aria-label="Priorità delle raccomandazioni">
+    {% for key, label in priorities.items() %}
+    <a class="button {% if key == priority %}button-primary{% else %}button-ghost{% endif %}"
+       href="/recommendations/{{ film.id }}?priority={{ key }}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  {% if recommendations %}
+  <div class="recommendation-list">
+    {% for rec in recommendations %}
+    <article class="recommendation-card" style="--score: {{ rec.score }}">
+      <div class="rank">#{{ loop.index }}</div>
+      <div class="rec-main">
+        <div class="rec-title-row">
+          <div>
+            <h3><a href="/recommendations/{{ rec.id }}">{{ rec.title }}</a></h3>
+            <p class="rec-sub">{{ rec.year or "Anno non disponibile" }}</p>
+          </div>
+          <div class="score-block" title="Punteggio combinato">
+            <span>{{ rec.score }}</span>
+            <small>punti</small>
+          </div>
+        </div>
+
+        <div class="shared-grid">
+          <div class="shared-group">
+            <h4>Tropi condivisi <span>{{ rec.shared_tropes_count }}</span></h4>
+            {% if rec.shared_tropes %}
+            <div class="chip-row">
+              {% for item in rec.shared_tropes %}
+              <span class="chip chip-trope">{{ item.label }}</span>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-inline">Nessun tropo in comune.</p>
+            {% endif %}
+          </div>
+          <div class="shared-group">
+            <h4>Regia <span>{{ rec.shared_directors_count }}</span></h4>
+            {% if rec.shared_directors %}
+            <div class="chip-row">
+              {% for item in rec.shared_directors %}
+              <span class="chip chip-person">{{ item.label }}</span>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-inline">Nessun regista in comune.</p>
+            {% endif %}
+          </div>
+          <div class="shared-group">
+            <h4>Cast <span>{{ rec.shared_actors_count }}</span></h4>
+            {% if rec.shared_actors %}
+            <div class="chip-row">
+              {% for item in rec.shared_actors[:4] %}
+              <span class="chip chip-person">{{ item.label }}</span>
+              {% endfor %}
+              {% if rec.shared_actors|length > 4 %}
+              <span class="chip chip-more">+{{ rec.shared_actors|length - 4 }}</span>
+              {% endif %}
+            </div>
+            {% else %}
+            <p class="empty-inline">Nessun attore in comune.</p>
+            {% endif %}
+          </div>
+          <div class="shared-group">
+            <h4>Generi <span>{{ rec.shared_genres_count }}</span></h4>
+            {% if rec.shared_genres %}
+            <div class="chip-row">
+              {% for item in rec.shared_genres %}
+              <span class="chip chip-genre">{{ item.label }}</span>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-inline">Nessun genere in comune.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="rec-footer">
+          <div class="source-summary">
+            <span>Fonti:</span>
+            {% if rec.source_summary %}
+              {% for source, count in rec.source_summary.items() %}
+              <span class="source-pill">{{ source|source_label }} <small>{{ count }}</small></span>
+              {% endfor %}
+            {% else %}
+              <span class="source-pill">Dati locali</span>
+            {% endif %}
+          </div>
+          <a class="button button-ghost" href="/explanation/{{ film.id }}/{{ rec.id }}">Esplora il grafo →</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3>Nessuna raccomandazione disponibile</h3>
+    <p>Prova con un altro film del catalogo.</p>
+    <a class="button button-primary" href="/">Torna al catalogo</a>
+  </div>
+  {% endif %}
+</section>
+
+<section class="section section-split">
+  <div>
+    <p class="eyebrow">Trasparenza</p>
+    <h2>Ogni elemento ha una fonte</h2>
+    <p class="section-note">
+      Le fonti mostrate accanto ai risultati provengono dalle triple che
+      collegano il film candidato alle proprietà condivise. Il grafo di
+      spiegazione è generato da <code>04_explanation_construct.rq</code>.
+    </p>
+  </div>
+  <div class="info-panel">
+    <h3>Lettura del punteggio</h3>
+    <ul class="plain-list">
+      <li><span>Tropi condivisi</span><strong>+{{ priority_weights.tropes }} ciascuno</strong></li>
+      <li><span>Regista condiviso</span><strong>+{{ priority_weights.director }}</strong></li>
+      <li><span>Attore condiviso</span><strong>+{{ priority_weights.actors }}</strong></li>
+      <li><span>Genere condiviso</span><strong>+{{ priority_weights.genres }}</strong></li>
+    </ul>
+    <p class="microcopy">Il punteggio serve a ordinare, non a sostituire la spiegazione.</p>
+  </div>
+</section>
+{% endblock %}

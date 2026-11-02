@@ -1,0 +1,94 @@
+[
+  {
+    "id": "SpeculativeFiction",
+    "label": "Narrativa speculativa",
+    "parents": []
+  },
+  {
+    "id": "ScienceFiction",
+    "label": "Fantascienza",
+    "parents": ["SpeculativeFiction"],
+    "aliases": ["SciFi"]
+  },
+  {
+    "id": "SciFi",
+    "label": "Sci-Fi",
+    "parents": ["SpeculativeFiction"],
+    "equivalentTo": "ScienceFiction"
+  },
+  {
+    "id": "Fantasy",
+    "label": "Fantasy",
+    "parents": ["SpeculativeFiction"]
+  },
+  {
+    "id": "Horror",
+    "label": "Horror",
+    "parents": ["SpeculativeFiction"]
+  },
+  {
+    "id": "Thriller",
+    "label": "Thriller",
+    "parents": []
+  },
+  {
+    "id": "Crime",
+    "label": "Crime",
+    "parents": ["Thriller"]
+  },
+  {
+    "id": "Mystery",
+    "label": "Mistero",
+    "parents": ["Thriller"]
+  },
+  {
+    "id": "Action",
+    "label": "Azione",
+    "parents": []
+  },
+  {
+    "id": "Adventure",
+    "label": "Avventura",
+    "parents": ["Action"]
+  },
+  {
+    "id": "Drama",
+    "label": "Dramma",
+    "parents": []
+  },
+  {
+    "id": "Comedy",
+    "label": "Commedia",
+    "parents": []
+  },
+  {
+    "id": "Romance",
+    "label": "Romantico",
+    "parents": ["Drama"]
+  },
+  {
+    "id": "War",
+    "label": "Guerra",
+    "parents": ["Drama"]
+  },
+  {
+    "id": "Western",
+    "label": "Western",
+    "parents": ["Drama"]
+  },
+  {
+    "id": "Music",
+    "label": "Musicale",
+    "parents": ["Drama"]
+  },
+  {
+    "id": "Animation",
+    "label": "Animazione",
+    "parents": []
+  },
+  {
+    "id": "Family",
+    "label": "Per famiglie",
+    "parents": ["Animation"]
+  }
+]

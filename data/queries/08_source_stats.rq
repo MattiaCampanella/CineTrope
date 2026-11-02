@@ -1,0 +1,12 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Quante triple contiene ogni named graph usato come fonte.
+SELECT ?source ?sourceLabel (COUNT(*) AS ?triples)
+WHERE {
+  GRAPH ?source { ?s ?p ?o }
+  ?source a :Fonte .
+  OPTIONAL { ?source rdfs:label ?sourceLabel }
+}
+GROUP BY ?source ?sourceLabel
+ORDER BY DESC(COUNT(*))

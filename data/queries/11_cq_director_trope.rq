@@ -1,0 +1,19 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Competency question: quali film sono diretti da persone che hanno lavorato
+# su opere con lo stesso tropo del film scelto?
+SELECT DISTINCT ?film ?title ?trope ?tropeLabel ?director ?directorName
+WHERE {
+  <{{SEED}}> :hasTrope ?trope ;
+             :directedBy ?director .
+  ?film :directedBy ?director ;
+        :hasTrope ?trope ;
+        a :Film ;
+        rdfs:label ?title .
+  ?trope rdfs:label ?tropeLabel .
+  ?director rdfs:label ?directorName .
+  FILTER (?film != <{{SEED}}>)
+}
+ORDER BY ?title ?tropeLabel
+LIMIT 40

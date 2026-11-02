@@ -1,0 +1,18 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+# Gerarchia dei generi: solo relazioni tra generi diversi e non riflessive.
+SELECT ?genre ?genreLabel ?parent ?parentLabel
+WHERE {
+  ?genre a :Genere ;
+         rdfs:label ?genreLabel ;
+         rdfs:subClassOf ?parent .
+  ?parent a :Genere ;
+          rdfs:label ?parentLabel .
+  FILTER (?parent != ?genre)
+  FILTER (?parent != :Genere)
+  FILTER NOT EXISTS { ?genre owl:equivalentClass ?parent }
+  FILTER NOT EXISTS { ?parent owl:equivalentClass ?genre }
+}
+ORDER BY ?genreLabel ?parentLabel

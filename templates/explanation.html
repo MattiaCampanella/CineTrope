@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Spiegazione · {{ seed.title }} → {{ recommendation.title }}{% endblock %}
+{% block content %}
+<section class="explanation-head">
+  <a class="back-link" href="/recommendations/{{ seed.id }}">← Torna alle raccomandazioni</a>
+  <div class="explanation-title">
+    <div>
+      <p class="eyebrow">Grafo di spiegazione · CONSTRUCT</p>
+      <h1>{{ seed.title }} <span class="arrow">→</span> {{ recommendation.title }}</h1>
+      <p class="section-note">
+        Il grafo è costruito interrogando i named graph delle fonti. Ogni arco
+        rappresenta una proprietà condivisa o un collegamento di provenienza.
+      </p>
+    </div>
+    <div class="explanation-badges">
+      {% if explanation.recommendation_is_mindbender %}
+      <span class="badge badge-inferred">MindBender inferito</span>
+      {% endif %}
+      <span class="badge">{{ explanation.node_count }} nodi</span>
+      <span class="badge">{{ explanation.edge_count }} archi</span>
+      <span class="badge">{{ explanation.triple_count }} triple</span>
+    </div>
+  </div>
+</section>
+
+<section class="graph-layout">
+  <div class="graph-card">
+    <div class="graph-toolbar">
+      <div class="legend">
+        <span><i class="dot dot-seed"></i>Film scelto</span>
+        <span><i class="dot dot-rec"></i>Raccomandazione</span>
+        <span><i class="dot dot-trope"></i>Tropo</span>
+        <span><i class="dot dot-person"></i>Persona</span>
+        <span><i class="dot dot-genre"></i>Genere</span>
+        <span><i class="dot dot-source"></i>Fonte</span>
+      </div>
+      <div class="graph-actions">
+        <button class="button button-small" type="button" id="fit-graph">Adatta</button>
+        <button class="button button-small" type="button" id="toggle-physics">Fisica on</button>
+      </div>
+    </div>
+    <div id="network" class="network" aria-label="Grafo interattivo della spiegazione"></div>
+    <div id="node-info" class="node-info">Seleziona un nodo per leggerne il tipo e le relazioni.</div>
+  </div>
+
+  <aside class="explanation-side">
+    <div class="side-block">
+      <p class="panel-kicker">Proprietà condivise</p>
+      {% for group, label in [('tropes', 'Tropi'), ('directors', 'Regia'), ('actors', 'Cast'), ('genres', 'Generi')] %}
+      <div class="side-group">
+        <h3>{{ label }}</h3>
+        {% if details[group] %}
+        <ul class="side-list">
+          {% for item in details[group] %}
+          <li>
+            <span>{{ item.label }}</span>
+            {% if item.sources %}
+            <small>{{ item.sources|map('source_label')|join(' · ') }}</small>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty-inline">Nessun elemento condiviso.</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="side-block">
+      <p class="panel-kicker">Percorso</p>
+      <p class="microcopy">
+        La query parte da <strong>{{ seed.title }}</strong>, attraversa tropi,
+        regia, cast e generi, e chiude su <strong>{{ recommendation.title }}</strong>.
+        Il ramo <code>:assertedIn</code> collega ogni fatto al named graph che lo asserisce.
+      </p>
+      <a class="text-link" href="/queries">Apri la query commentata →</a>
+    </div>
+  </aside>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Dati grezzi</p>
+      <h2>Triple del grafo</h2>
+    </div>
+    <p class="section-note">Il payload è serializzabile in Turtle e disponibile via API.</p>
+  </div>
+  <details class="raw-details">
+    <summary>Mostra le {{ explanation.triple_count }} triple</summary>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Soggetto</th><th>Predicato</th><th>Oggetto</th></tr>
+        </thead>
+        <tbody>
+          {% for triple in explanation.triples %}
+          <tr>
+            <td><code>{{ triple.subject }}</code></td>
+            <td><code>{{ triple.predicate }}</code></td>
+            <td><code>{{ triple.object }}</code></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <details class="turtle-details">
+      <summary>Serializzazione Turtle</summary>
+      <pre class="code-block">{{ explanation.turtle }}</pre>
+    </details>
+  </details>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/vendor/vis-network.min.js"></script>
+<script>
+  window.CINETROPE_GRAPH = {{ graph_json|tojson }};
+</script>
+<script src="/static/graph.js"></script>
+{% endblock %}

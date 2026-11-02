@@ -1,0 +1,16 @@
+# Regole SWRL di CineTrope
+# Notazione leggibile; la versione eseguibile dal motore è in cinetrope-swrl.n3.
+# Le stesse regole possono essere ricreate in Protégé con il plugin SWRLTab.
+
+Film(?f) ^ hasTrope(?f, :UnreliableNarrator) ^ hasTrope(?f, :TwistEnding)
+    -> :MindBender(?f)
+
+Persona(?p1) ^ Persona(?p2) ^ collaboratedWith(?p1, ?p2) ^ frequentCollaboration(?p1, ?p2)
+    -> hasFrequentCollaborator(?p1, ?p2)
+
+# La condizione "hanno lavorato insieme in più di tre opere" non è esprimibile
+# direttamente in SWRL standard perché richiede un'aggregazione. Il conteggio
+# viene quindi calcolato durante l'ETL con la query SPARQL
+# data/queries/detect_frequent_collaboration.rq (GROUP BY / HAVING).
+# La regola SWRL trasforma poi :frequentCollaboration in
+# :hasFrequentCollaborator, creando un nuovo collegamento tra individui.

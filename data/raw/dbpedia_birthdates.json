@@ -1,0 +1,97 @@
+{
+  "Bong Joon-ho": {
+    "birthDate": "1969-09-14",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Bong_Joon-ho"
+  },
+  "Bryan Singer": {
+    "birthDate": "1965-09-17",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Bryan_Singer"
+  },
+  "Christopher Nolan": {
+    "birthDate": "1970-07-30",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Christopher_Nolan"
+  },
+  "Damien Chazelle": {
+    "birthDate": "1985-01-19",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Damien_Chazelle"
+  },
+  "David Fincher": {
+    "birthDate": "1962-08-28",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/David_Fincher"
+  },
+  "Denis Villeneuve": {
+    "birthDate": "1967-10-03",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Denis_Villeneuve"
+  },
+  "Francis Ford Coppola": {
+    "birthDate": "1939-04-07",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Francis_Ford_Coppola"
+  },
+  "George Lucas": {
+    "birthDate": "1944-05-14",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/George_Lucas"
+  },
+  "Hayao Miyazaki": {
+    "birthDate": "1941-01-05",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Hayao_Miyazaki"
+  },
+  "Irvin Kershner": {
+    "birthDate": "1923-04-29",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Irvin_Kershner"
+  },
+  "Joe Wright": {
+    "birthDate": "1972-08-25",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Joe_Wright"
+  },
+  "John Lasseter": {
+    "birthDate": "1957-01-12",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/John_Lasseter"
+  },
+  "Jordan Peele": {
+    "birthDate": "1979-02-21",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Jordan_Peele"
+  },
+  "M. Night Shyamalan": {
+    "birthDate": "1970-08-06",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/M._Night_Shyamalan"
+  },
+  "Michel Gondry": {
+    "birthDate": "1963-05-08",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Michel_Gondry"
+  },
+  "Park Chan-wook": {
+    "birthDate": "1963-08-23",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Park_Chan-wook"
+  },
+  "Quentin Tarantino": {
+    "birthDate": "1963-03-27",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Quentin_Tarantino"
+  },
+  "Rian Johnson": {
+    "birthDate": "1973-12-17",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Rian_Johnson"
+  },
+  "Stanley Kubrick": {
+    "birthDate": "1928-07-26",
+    "source": "DBpedia",
+    "dbpedia": "http://dbpedia.org/resource/Stanley_Kubrick"
+  }
+}

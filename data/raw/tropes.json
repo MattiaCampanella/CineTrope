@@ -1,0 +1,77 @@
+[
+  {
+    "id": "UnreliableNarrator",
+    "label": "Narratore inaffidabile",
+    "description": "La narrazione è alterata, incompleta o deliberatamente fuorviante."
+  },
+  {
+    "id": "TwistEnding",
+    "label": "Finale a sorpresa",
+    "description": "Il finale ridefinisce retroattivamente il significato della storia."
+  },
+  {
+    "id": "MacGuffin",
+    "label": "MacGuffin",
+    "description": "Un oggetto o obiettivo la cui ricerca muove la trama."
+  },
+  {
+    "id": "FoundFamily",
+    "label": "Famiglia ritrovata",
+    "description": "Personaggi non legati da sangue costruiscono un nucleo familiare."
+  },
+  {
+    "id": "EnemiesToLovers",
+    "label": "Da nemici ad amanti",
+    "description": "Due personaggi passano da ostilità o rivalità a una relazione amorosa."
+  },
+  {
+    "id": "NonLinearNarrative",
+    "label": "Narrazione non lineare",
+    "description": "La storia è raccontata con salti temporali, flashback o montaggio non cronologico."
+  },
+  {
+    "id": "TimeLoop",
+    "label": "Ciclo temporale",
+    "description": "Il tempo si ripete, si intreccia o viene percepito in modo non causale."
+  },
+  {
+    "id": "DreamWithinADream",
+    "label": "Sogno dentro il sogno",
+    "description": "La realtà è composta da livelli onirici annidati."
+  },
+  {
+    "id": "HeistPlot",
+    "label": "Colpo pianificato",
+    "description": "Un gruppo organizza un'operazione complessa per ottenere un obiettivo."
+  },
+  {
+    "id": "RevengePlot",
+    "label": "Trama di vendetta",
+    "description": "La ricerca di vendetta guida le azioni dei personaggi."
+  },
+  {
+    "id": "Rivalry",
+    "label": "Rivalità",
+    "description": "Un confronto persistente tra due personaggi o gruppi."
+  },
+  {
+    "id": "SimulatedReality",
+    "label": "Realtà simulata",
+    "description": "Il mondo percepito è artificiale, virtuale o costruito."
+  },
+  {
+    "id": "Doppelganger",
+    "label": "Doppelgänger",
+    "description": "Un personaggio ha un doppio, un sosia o un'identità speculare."
+  },
+  {
+    "id": "ComingOfAge",
+    "label": "Romanzo di formazione",
+    "description": "Il protagonista cresce e cambia attraverso la vicenda."
+  },
+  {
+    "id": "BittersweetEnding",
+    "label": "Finale agrodolce",
+    "description": "Il finale combina conquiste e perdite, senza una risoluzione completamente felice."
+  }
+]
