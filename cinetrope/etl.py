@@ -175,7 +175,7 @@ def build_catalog(write: bool = False) -> Dataset:
     """Costruisce il dataset esplicito, separando le fonti in named graph."""
     films = _read_json("films.json")
     genres = _read_json("genres.json")
-    tropes = _read_json("tropes.json")
+    tropes = _read_optional_json("tropes.json") or []
     keywords = []
     tmdb_records = _read_optional_json("tmdb.json")
     if isinstance(tmdb_records, list) and tmdb_records:

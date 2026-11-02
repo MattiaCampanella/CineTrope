@@ -19,6 +19,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--title", action="append", help="Film da cercare; ripetibile.")
     parser.add_argument("--discover-pages", type=int, default=0, help="Pagine TMDB da importare.")
+    parser.add_argument("--start-page", type=int, default=1, help="Prima pagina TMDB da importare.")
+    parser.add_argument("--target", type=int, default=500, help="Numero massimo di film TMDB da mantenere.")
     parser.add_argument("--skip-existing", action="store_true", help="Non reimportare i titoli già in films.json.")
     args = parser.parse_args()
 
@@ -33,15 +35,27 @@ def main() -> None:
         film["title"] for film in existing_tmdb
     ]
     titles.extend(args.title or [])
-    records = [fetch_movie(title, api_key) for title in dict.fromkeys(titles)]
-    if args.discover_pages:
-        records.extend(fetch_discover(api_key, args.discover_pages))
-
     unique = {}
-    for record in existing_tmdb + records:
+    for record in existing_tmdb:
         if record.get("tmdb_id") is not None:
             record["id"] = f"TMDB{record['tmdb_id']}"
             unique[str(record["tmdb_id"])] = record
+    records = [fetch_movie(title, api_key) for title in dict.fromkeys(titles)]
+    for record in records:
+        if record.get("tmdb_id") is not None:
+            record["id"] = f"TMDB{record['tmdb_id']}"
+            unique[str(record["tmdb_id"])] = record
+    if args.discover_pages:
+        for page in range(args.start_page, args.start_page + args.discover_pages):
+            if len(unique) >= args.target:
+                break
+            for record in fetch_discover(api_key, pages=1, start_page=page):
+                if record.get("tmdb_id") is not None:
+                    record["id"] = f"TMDB{record['tmdb_id']}"
+                    unique[str(record["tmdb_id"])] = record
+                    if len(unique) >= args.target:
+                        break
+    unique = dict(list(unique.items())[:args.target])
     TMDB_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_records(TMDB_PATH, list(unique.values()))
     series = [film for film in existing if film.get("type") == "SerieTV"]

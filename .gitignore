@@ -10,6 +10,8 @@ venv/
 .coverage
 htmlcov/
 data/generated/
+data/raw/tropes.json
+data/raw/tmdb.json
 .DS_Store
 Thumbs.db
 progetto.txt

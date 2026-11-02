@@ -11,7 +11,7 @@ localmente: la demo non dipende da endpoint pubblici.
 ## Funzionalità
 
 - Catalogo locale di film e serie TV, con keyword TMDB usate come tropi condivisibili
-  (nell'importazione corrente: 224 film, 1 serie e 1886 keyword/tropi).
+  (nell'importazione corrente: 500 film, 1 serie e 3514 keyword/tropi).
 - Raccomandazioni ordinate da un punteggio combinato:
 - Raccomandazioni con preset selezionabili: bilanciata, priorità cast, priorità
   regia, priorità tropi e priorità generi.
@@ -302,7 +302,7 @@ Configura la chiave copiando `.env.example` in `.env` e sostituendo il valore:
 ```powershell
 Copy-Item .env.example .env
 # Modifica .env e inserisci la tua chiave TMDB_API_KEY
-python scripts/import_tmdb.py --discover-pages 10
+python scripts/import_tmdb.py --discover-pages 25 --target 500 --skip-existing
 python scripts/build_store.py
 ```
 

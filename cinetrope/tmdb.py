@@ -15,8 +15,12 @@ TMDB_API = "https://api.themoviedb.org/3"
 
 def classify_keyword(keyword: dict) -> dict:
     name = str(keyword["name"]).strip()
+    try:
+        keyword_id = slugify(name)
+    except ValueError:
+        keyword_id = f"TMDBKeyword{keyword['id']}"
     return {
-        "id": slugify(name),
+        "id": keyword_id,
         "label": name,
         "category": "trope",
     }
@@ -67,9 +71,14 @@ def fetch_movie(title: str, api_key: str, language: str = "it-IT") -> dict:
     return record
 
 
-def fetch_discover(api_key: str, pages: int = 1, language: str = "it-IT") -> list[dict]:
+def fetch_discover(
+    api_key: str,
+    pages: int = 1,
+    language: str = "it-IT",
+    start_page: int = 1,
+) -> list[dict]:
     records = []
-    for page in range(1, pages + 1):
+    for page in range(start_page, start_page + pages):
         results = _request(
             "/discover/movie",
             api_key,
