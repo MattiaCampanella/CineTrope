@@ -33,6 +33,36 @@ def test_dbpedia_service_enrichment() -> None:
     assert (CT.ChristopherNolan, CT.birthDate, expected) in dataset.graph(CT.DBpedia)
 
 
+def test_tmdb_provenance() -> None:
+    from rdflib import RDF
+
+    dataset = build_catalog()
+    tmdb = dataset.graph(CT.TMDB)
+    wikidata = dataset.graph(CT.Wikidata)
+
+    assert (CT.TMDB27205, RDF.type, CT.Film) in tmdb
+    assert (CT.TMDB27205, CT.directedBy, CT.ChristopherNolan) in tmdb
+    assert (CT.TMDB27205, CT.directedBy, CT.ChristopherNolan) not in wikidata
+    assert (CT.TMDB27205, CT.hasTrope, CT.dreams) in tmdb
+    assert (CT.dreams, RDF.type, CT.Tropo) in tmdb
+
+
+def test_genres_are_individuals_without_punning() -> None:
+    from rdflib import OWL, RDF, RDFS
+
+    dataset = build_catalog()
+    local = dataset.graph(CT.LocalAnalysis)
+    tmdb = dataset.graph(CT.TMDB)
+
+    assert (CT.ScienceFiction, RDF.type, CT.Genere) in local
+    assert (CT.ScienceFiction, RDF.type, OWL.Class) not in local
+    assert (CT.ScienceFiction, RDFS.subClassOf, CT.SpeculativeFiction) not in local
+    assert (CT.ScienceFiction, CT.subGenreOf, CT.SpeculativeFiction) in local
+    assert (CT.SciFi, RDF.type, CT.Genere) not in local
+    assert (CT.TMDB27205, CT.hasGenre, CT.ScienceFiction) in tmdb
+    assert (CT.TMDB27205, CT.hasGenre, CT.SciFi) not in tmdb
+
+
 def test_swrl_mindbenders(store: CineTropeStore) -> None:
     titles = {row["title"] for row in store.mindbenders()}
     assert len(titles) == store.stats()["mindbenders"]

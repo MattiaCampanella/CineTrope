@@ -122,7 +122,9 @@ Scelte di modellazione:
 
 - **Punning OWL 2 sui generi**: un genere è sia `owl:Class` (per classificare i
   film) sia individuo di `:Genere` (per `hasGenre` e per la gerarchia).
-- `ScienceFiction owl:equivalentClass SciFi`.
+- `SciFi` viene normalizzato in `ScienceFiction` durante l'ETL.
+- I generi sono individui di `Genere`, collegati da `subGenreOf`; non viene usato
+  punning OWL 2.
 - `Film owl:disjointWith SerieTV`.
 - `Film` ha almeno un regista e al massimo un anno di uscita. Le restrizioni
   OWL sono affiancate da controlli SPARQL espliciti, perché OWL RL non implementa
@@ -134,9 +136,9 @@ Scelte di modellazione:
 | Named graph | Contenuto |
 | --- | --- |
 | `:Ontology` | Schema RDFS/OWL e vocabolario |
-| `:Wikidata` | Titoli, anni, regia, cast, generi |
+| `:Wikidata` | Metadati strutturati delle persone, per esempio date di nascita |
 | `:DBpedia` | Metadati biografici delle persone |
-| `:TMDB` | Metadati e keyword importati automaticamente |
+| `:TMDB` | Titoli, anni, regia, cast, generi e keyword importati automaticamente |
 | `:Derived` | Co-star, collaborazioni e collaborazioni frequenti |
 | `:Inferred` | Chiusura OWL RL e conseguenze SWRL |
 

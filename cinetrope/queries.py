@@ -104,7 +104,7 @@ COMPETENCY_QUESTIONS = [
         "title": "Gerarchia dei generi",
         "question": "Quali generi sono sottogeneri di altri generi?",
         "query": "09_genre_hierarchy.rq",
-        "note": "Mostra rdfs:subClassOf e il punning OWL 2 usato per collegare generi-classe e generi-individuo.",
+        "note": "Mostra la gerarchia dei generi modellati come individui tramite subGenreOf.",
     },
     {
         "id": "cq8",

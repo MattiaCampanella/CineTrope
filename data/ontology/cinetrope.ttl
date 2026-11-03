@@ -49,7 +49,7 @@
 
 :Genere a owl:Class ;
     rdfs:label "Genere"@it ;
-    rdfs:comment "I generi sono modellati come classi (per la gerarchia rdfs:subClassOf) e, tramite punning OWL 2, anche come individui di :Genere per l'uso della proprietà :hasGenre."@it .
+    rdfs:comment "I generi sono modellati come individui di questa classe e collegati tra loro tramite :subGenreOf."@it .
 
 :Tropo a owl:Class ;
     rdfs:label "Tropo narrativo"@it .
@@ -252,7 +252,7 @@
 
 :Wikidata a :Fonte ;
     rdfs:label "Wikidata"@en ;
-    rdfs:comment "Metadati strutturati di film, persone e generi."@it .
+    rdfs:comment "Metadati strutturati delle persone, per esempio le date di nascita."@it .
 
 :DBpedia a :Fonte ;
     rdfs:label "DBpedia"@en ;
@@ -264,7 +264,7 @@
 
 :TMDB a :Fonte ;
     rdfs:label "TMDB"@en ;
-    rdfs:comment "Metadati e keyword importati automaticamente da TMDB."@it .
+    rdfs:comment "Film, serie, cast, regia, generi e keyword importati automaticamente da TMDB."@it .
 
 :LocalAnalysis a :Fonte ;
     rdfs:label "Analisi locale"@it ;

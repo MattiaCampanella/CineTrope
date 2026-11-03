@@ -25,6 +25,10 @@ def ct_iri(local_name: str):
     return CT[local_name]
 
 
+def normalize_genre_id(genre_id: str) -> str:
+    return "ScienceFiction" if genre_id == "SciFi" else genre_id
+
+
 def _read_json(name: str):
     with (RAW_DIR / name).open(encoding="utf-8") as handle:
         return json.load(handle)
@@ -44,32 +48,29 @@ def _load_ontology(dataset: Dataset) -> None:
 
 
 def _add_source_facts(dataset: Dataset, genres, tropes, keywords=()) -> None:
-    from rdflib import OWL, RDF, RDFS
+    from rdflib import RDF, RDFS
 
-    graph = dataset.graph(CT.LocalAnalysis)
+    local = dataset.graph(CT.LocalAnalysis)
     for genre in genres:
-        gid = ct_iri(genre["id"])
-        graph.add((gid, RDF.type, OWL.Class))
-        graph.add((gid, RDF.type, CT.Genere))
-        graph.add((gid, RDFS.label, _literal(genre["label"])))
+        gid = ct_iri(normalize_genre_id(genre["id"]))
+        local.add((gid, RDF.type, CT.Genere))
+        local.add((gid, RDFS.label, _literal(genre["label"])))
         for parent_id in genre.get("parents", []):
-            parent = ct_iri(parent_id)
-            graph.add((gid, RDFS.subClassOf, parent))
-            graph.add((gid, CT.subGenreOf, parent))
-        if genre.get("equivalentTo"):
-            graph.add((gid, OWL.equivalentClass, ct_iri(genre["equivalentTo"])))
+            parent = ct_iri(normalize_genre_id(parent_id))
+            local.add((gid, CT.subGenreOf, parent))
 
     for trope in tropes:
         tid = ct_iri(trope["id"])
-        graph.add((tid, RDF.type, CT.Tropo))
-        graph.add((tid, RDFS.label, _literal(trope["label"])))
-        graph.add((tid, RDFS.comment, _literal(trope["description"])))
+        local.add((tid, RDF.type, CT.Tropo))
+        local.add((tid, RDFS.label, _literal(trope["label"])))
+        local.add((tid, RDFS.comment, _literal(trope["description"])))
 
+    tmdb = dataset.graph(CT.TMDB)
     for keyword in keywords:
         term = ct_iri(keyword["id"])
         target_type = CT.Tropo if keyword["category"] == "trope" else CT.ElementoDescrittivo
-        graph.add((term, RDF.type, target_type))
-        graph.add((term, RDFS.label, _literal(keyword["label"])))
+        tmdb.add((term, RDF.type, target_type))
+        tmdb.add((term, RDFS.label, _literal(keyword["label"])))
 
 
 def _literal(text: str):
@@ -95,7 +96,7 @@ def _add_people(dataset: Dataset, films, people_meta, enrichment: dict | None = 
 
     metadata_by_local = {slugify(name): data for name, data in people_meta.items()}
     enrichment_by_local = {slugify(name): data for name, data in (enrichment or {}).items()}
-    catalog = dataset.graph(CT.Wikidata)
+    catalog = dataset.graph(CT.TMDB)
     for local, name in display_names.items():
         person = ct_iri(local)
         catalog.add((person, RDF.type, CT.Persona))
@@ -123,27 +124,26 @@ def _add_people(dataset: Dataset, films, people_meta, enrichment: dict | None = 
 def _add_films(dataset: Dataset, films) -> None:
     from rdflib import RDF, RDFS, Literal, XSD
 
-    wikidata = dataset.graph(CT.Wikidata)
+    tmdb = dataset.graph(CT.TMDB)
     for film in films:
         work = ct_iri(film["id"])
         work_type = CT.SerieTV if film.get("type") == "SerieTV" else CT.Film
-        wikidata.add((work, RDF.type, work_type))
-        wikidata.add((work, RDFS.label, _literal(film["title"])))
+        tmdb.add((work, RDF.type, work_type))
+        tmdb.add((work, RDFS.label, _literal(film["title"])))
         if film.get("year"):
-            wikidata.add((work, CT.releaseYear, Literal(str(film["year"]), datatype=XSD.gYear)))
+            tmdb.add((work, CT.releaseYear, Literal(str(film["year"]), datatype=XSD.gYear)))
 
         for genre_id in film.get("genres", []):
-            genre = ct_iri(genre_id)
-            wikidata.add((work, CT.hasGenre, genre))
-            wikidata.add((work, RDF.type, genre))
+            genre = ct_iri(normalize_genre_id(genre_id))
+            tmdb.add((work, CT.hasGenre, genre))
 
         for director in film.get("directors", []):
-            wikidata.add((work, CT.directedBy, ct_iri(slugify(director))))
+            tmdb.add((work, CT.directedBy, ct_iri(slugify(director))))
         for actor in film.get("cast", []):
-            wikidata.add((work, CT.starring, ct_iri(slugify(actor))))
+            tmdb.add((work, CT.starring, ct_iri(slugify(actor))))
 
         for keyword in film.get("keywords", []):
-            dataset.graph(CT.TMDB).add((work, CT.hasTrope, ct_iri(keyword["id"])))
+            tmdb.add((work, CT.hasTrope, ct_iri(keyword["id"])))
 
 
 def _add_derived_relations(dataset: Dataset, films) -> None:

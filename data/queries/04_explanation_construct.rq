@@ -44,7 +44,7 @@ WHERE {
     BIND (:sharesTropeWith AS ?sharePredicate)
     ?trope rdfs:label ?tropeLabel .
     ?source rdfs:label ?sourceLabel .
-    FILTER (?source IN (:Wikidata, :DBpedia, :TvTropes, :LocalAnalysis))
+    FILTER (?source IN (:Wikidata, :DBpedia, :TMDB, :TvTropes, :LocalAnalysis))
   }
   UNION
   {
@@ -55,7 +55,7 @@ WHERE {
     BIND (:sharesDirectorWith AS ?sharePredicate)
     ?director rdfs:label ?directorLabel .
     ?source rdfs:label ?sourceLabel .
-    FILTER (?source IN (:Wikidata, :DBpedia, :TvTropes, :LocalAnalysis))
+    FILTER (?source IN (:Wikidata, :DBpedia, :TMDB, :TvTropes, :LocalAnalysis))
   }
   UNION
   {
@@ -66,7 +66,7 @@ WHERE {
     BIND (:sharesActorWith AS ?sharePredicate)
     ?actor rdfs:label ?actorLabel .
     ?source rdfs:label ?sourceLabel .
-    FILTER (?source IN (:Wikidata, :DBpedia, :TvTropes, :LocalAnalysis))
+    FILTER (?source IN (:Wikidata, :DBpedia, :TMDB, :TvTropes, :LocalAnalysis))
   }
   UNION
   {
@@ -77,6 +77,6 @@ WHERE {
     BIND (:sharesGenreWith AS ?sharePredicate)
     ?genre rdfs:label ?genreLabel .
     ?source rdfs:label ?sourceLabel .
-    FILTER (?source IN (:Wikidata, :DBpedia, :TvTropes, :LocalAnalysis))
+    FILTER (?source IN (:Wikidata, :DBpedia, :TMDB, :TvTropes, :LocalAnalysis))
   }
 }
