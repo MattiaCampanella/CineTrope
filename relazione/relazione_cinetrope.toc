@@ -1,0 +1,34 @@
+\babel@toc {italian}{}\relax 
+\babel@toc {italian}{}\relax 
+\contentsline {section}{\numberline {1}Introduzione}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Obiettivi del progetto}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Struttura della relazione}{3}{subsection.1.2}%
+\contentsline {section}{\numberline {2}CineTrope: dominio, obiettivi e dati}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Idea}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Competency questions}{4}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Fonti dati e materializzazione}{4}{subsection.2.3}%
+\contentsline {section}{\numberline {3}L'ontologia CineTrope}{5}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Classi}{5}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Propriet\`a}{6}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}I generi come individui}{7}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Restrizioni OWL e validazione}{8}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Named graph e provenienza}{8}{subsection.3.5}%
+\contentsline {section}{\numberline {4}Pipeline dati e architettura}{9}{section.4}%
+\contentsline {subsection}{\numberline {4.1}ETL: dai JSON alle triple}{9}{subsection.4.1}%
+\contentsline {section}{\numberline {5}Ragionamento automatico}{10}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Chiusura OWL RL}{10}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Risultati dell'inferenza}{11}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Il motore SWRL custom}{12}{subsection.5.3}%
+\contentsline {section}{\numberline {6}SPARQL al lavoro: raccomandazioni e spiegazioni}{13}{section.6}%
+\contentsline {subsection}{\numberline {6.1}La query di raccomandazione}{13}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Il grafo di spiegazione con CONSTRUCT}{13}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Le altre query e i pattern ricorrenti}{14}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Federazione SERVICE in ETL}{15}{subsection.6.4}%
+\contentsline {section}{\numberline {7}Applicazione web, API e CLI}{15}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Stack applicativo}{15}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}CLI e test}{16}{subsection.7.2}%
+\contentsline {section}{\numberline {8}Valutazione e limiti}{16}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Risultati raggiunti}{16}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Limiti e scelte consapevoli}{16}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Lavoro futuro}{17}{subsection.8.3}%
+\contentsline {section}{\numberline {9}Conclusioni}{17}{section.9}%

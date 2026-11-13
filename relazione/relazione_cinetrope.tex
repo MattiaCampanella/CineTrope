@@ -1,0 +1,1332 @@
+% ============================================================
+%  CineTrope - Relazione di progetto per il corso di Semantic Web
+%  A.A. 2025/26 - Corso di Laurea Magistrale in Informatica
+% ============================================================
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{lmodern}
+\usepackage[a4paper,top=2.4cm,bottom=2.6cm,left=2.6cm,right=2.6cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\hypersetup{
+  pdftitle={CineTrope: un recommender semantico spiegabile},
+  pdfauthor={Relazione di progetto Semantic Web},
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black
+}
+
+% ------------------------------------------------------------ 
+% Stili per i listati
+% ------------------------------------------------------------
+\definecolor{ctkw}{RGB}{0,90,160}
+\definecolor{ctcmt}{RGB}{0,120,60}
+\definecolor{ctstr}{RGB}{150,60,20}
+
+\lstdefinestyle{ttl}{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{ctkw}\bfseries,
+  commentstyle=\color{ctcmt}\itshape,
+  stringstyle=\color{ctstr},
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=true,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  framesep=4pt,
+  rulecolor=\color{black!25},
+  morekeywords={@prefix,a,rdf:type,rdfs:Class,rdfs:subClassOf,rdfs:subPropertyOf,
+    rdfs:domain,rdfs:range,rdfs:label,rdfs:comment,
+    owl:Class,owl:Ontology,owl:ObjectProperty,owl:DatatypeProperty,
+    owl:SymmetricProperty,owl:TransitiveProperty,owl:inverseOf,
+    owl:equivalentClass,owl:equivalentProperty,owl:disjointWith,
+    owl:Restriction,owl:onProperty,owl:minCardinality,owl:maxCardinality,
+    owl:versionInfo,xsd:gYear,xsd:date,xsd:nonNegativeInteger,
+    swrl:Imp,swrl:body,swrl:head,swrl:ClassAtom,swrl:IndividualPropertyAtom,
+    swrl:classPredicate,swrl:propertyPredicate,swrl:argument1,swrl:argument2},
+  alsoletter={:@},
+  morecomment=[l]{\#},
+}
+
+\lstdefinestyle{sparql}{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{ctkw}\bfseries,
+  commentstyle=\color{ctcmt}\itshape,
+  stringstyle=\color{ctstr},
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=true,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  framesep=4pt,
+  rulecolor=\color{black!25},
+  morekeywords={SELECT,CONSTRUCT,ASK,DESCRIBE,WHERE,PREFIX,FILTER,GROUP,BY,
+    ORDER,HAVING,COUNT,DISTINCT,OPTIONAL,UNION,LIMIT,GRAPH,SERVICE,BIND,
+    COALESCE,AS,DESC,ASC,STR,IN,NOT,EXISTS,MIN,MAX},
+  alsoletter={:?},
+  morecomment=[l]{\#},
+  sensitive=false,
+}
+
+\lstdefinestyle{py}{
+  language=Python,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{ctkw}\bfseries,
+  commentstyle=\color{ctcmt}\itshape,
+  stringstyle=\color{ctstr},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  framesep=4pt,
+  rulecolor=\color{black!25},
+  numbers=left,
+  numberstyle=\tiny\color{black!40},
+}
+
+\lstdefinestyle{txt}{
+  basicstyle=\ttfamily\footnotesize,
+  commentstyle=\color{ctcmt}\itshape,
+  breaklines=true,
+  frame=single,
+  framesep=4pt,
+  rulecolor=\color{black!25},
+  morecomment=[l]{\#},
+}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\prefix}[1]{\texttt{#1}}
+
+\title{\textbf{CineTrope}\\[4pt]
+\Large Un recommender semantico spiegabile per film,\\
+basato su ontologie RDFS/OWL, named graph e ragionamento automatico\\[10pt]
+\normalsize Relazione di progetto per il corso di \emph{Semantic Web}\\
+Corso di Laurea Magistrale in Informatica --- A.A.\ 2025/26}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\vspace{1.2cm}
+\begin{center}
+\begin{minipage}{0.86\textwidth}
+\small
+\textbf{Sommario.} 
+CineTrope \`e un sistema di raccomandazione semantico per contenuti audiovisivi:
+dato un film, propone cinque titoli simili e \emph{spiega} ogni suggerimento
+mostrando il percorso di conoscenza che lo motiva: i tropi narrativi condivisi,
+il regista, gli attori, i generi e le fonti da cui ogni informazione proviene.
+Il progetto applica in modo concreto la teoria del corso di Semantic Web:
+il modello RDF e le sue serializzazioni, RDF Schema per la tassonomia del
+dominio, OWL 2 per disgiunzioni, propriet\`a inverse e simmetriche, equivalenze
+e restrizioni, il profilo OWL RL con il reasoner \code{owlrl}, regole SWRL
+eseguite da un motore forward chaining dedicato, e SPARQL per le competency
+questions, per il grafo di spiegazione (\code{CONSTRUCT}) e per
+l'arricchimento federato (\code{SERVICE}). La provenienza di ogni asserzione
+\`e tracciata tramite named graph. La relazione approfondisce le scelte di
+modellazione ontologica e illustra come ogni costrutto teorico si traduce in
+una funzionalit\`a osservabile nell'applicazione.
+\end{minipage}
+\end{center}
+
+\vfill
+\begin{center}
+\rule{0.5\textwidth}{0.4pt}
+\end{center}
+\newpage
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Introduzione}
+% ============================================================
+
+I sistemi di raccomandazione moderni sono spesso delle \emph{black-box}: un
+modello, tipicamente appreso dai dati, produce un punteggio di preferenza che
+l'utente pu\`o solo accettare o ignorare, senza alcuna indicazione sul
+\emph{perch\'e} di un suggerimento. La visione del Semantic Web descritta a
+lezione~\cite{allemang2020,antoniou2012} suggerisce un'alternativa:
+rappresentare la conoscenza con un modello dichiarativo --- triple RDF
+organizzate in un'ontologia --- e usare l'inferenza automatica per derivare i
+risultati, in modo che ogni conclusione possa essere ricondotta ai fatti e
+alle regole che l'hanno prodotta.
+
+CineTrope nasce da questa idea. Il sistema, dato un film, propone cinque
+raccomandazioni accompagnate da una \emph{spiegazione strutturata}: i tropi
+narrativi condivisi (per esempio \emph{twist ending}, \emph{unreliable
+narrator}, \emph{dreams}), il regista e gli attori in comune, i generi
+sovrapposti e, per ogni informazione, la fonte da cui \`e stata estratta
+(TMDB, DBpedia, Wikidata, dati derivati o inferenze). La spiegazione non \`e
+un testo generato \emph{a posteriori}: \`e essa stessa un grafo RDF,
+prodotto da una query SPARQL \code{CONSTRUCT} e visualizzato in modo
+navigabile nella interfaccia web.
+
+\subsection{Obiettivi del progetto}
+
+Gli obiettivi, fissati in fase di progettazione a partire dal testo di
+specificazione del progetto, sono i seguenti:
+
+\begin{itemize}[nosep]
+  \item costruire una \textbf{ontologia RDFS/OWL} per il dominio audiovisivo
+        (opere, persone, generi, tropi, fonti), con gerarchie di classi,
+        propriet\`a inverse e simmetriche, equivalenze e restrizioni;
+  \item costruire un \textbf{knowledge graph} materializzato localmente a
+        partire da dati pubblici (TMDB come fonte canonica, arricchimento
+        biografico da DBpedia tramite query federata), separando le fonti in
+        \textbf{named graph} per tracciare la provenienza di ogni tripla;
+  \item usare \textbf{inferenza OWL RL} (reasoner \code{owlrl}) e
+        \textbf{regole SWRL} (motore custom a forward chaining) per derivare
+        conoscenza implicita: relazioni inverse e simmetriche, classificazioni
+        derivate come \code{MindBender} e legami di collaborazione frequente;
+  \item definire nove \textbf{competency questions} e le corrispondenti query
+        SPARQL commentate, coprendo aggregazioni (\code{GROUP BY}/\code{HAVING}),
+        costruzione di grafi (\code{CONSTRUCT}) e provenienza
+        (\code{GRAPH ?source});
+  \item fornire una \textbf{demo web} (FastAPI, Jinja2, vis.js) e una
+        \textbf{CLI} che espongano catalogo, raccomandazioni, spiegazioni,
+        provenienza e statistiche, senza dipendere da endpoint pubblici a
+        runtime.
+\end{itemize}
+
+\subsection{Struttura della relazione}
+
+La \textbf{Sezione~\ref{sec:dominio}} presenta il dominio di CineTrope, le
+competency questions e le fonti dati. La
+\textbf{Sezione~\ref{sec:ontologia}} --- cuore della relazione --- descrive
+l'ontologia realizzata e le scelte di modellazione. La
+\textbf{Sezione~\ref{sec:pipeline}} descrive la pipeline ETL e l'architettura
+del sistema. La \textbf{Sezione~\ref{sec:reasoning}} analizza il ragionamento
+automatico e i suoi risultati numerici. La \textbf{Sezione~\ref{sec:sparql}}
+illustra le query SPARQL pi\`u significative, in particolare quelle di
+raccomandazione e di spiegazione. La \textbf{Sezione~\ref{sec:web}} descrive
+l'applicazione web e la CLI; la \textbf{Sezione~\ref{sec:valutazione}}
+valuta il sistema e ne discute i limiti in modo critico.
+
+% ============================================================
+\section{CineTrope: dominio, obiettivi e dati}\label{sec:dominio}
+% ============================================================
+
+\subsection{Idea}
+
+CineTrope \`e un \emph{recommender} semantico per contenuti audiovisivi. Il
+flusso d'uso previsto dalla demo \`e:
+
+\begin{enumerate}[nosep]
+  \item l'utente sceglie un film dal catalogo;
+  \item il sistema calcola cinque raccomandazioni ordinate per rilevanza;
+  \item per ogni risultato mostra tropi, regista, attori e generi condivisi
+        con il film di partenza, ciascuno con la propria provenienza;
+  \item il grafo della spiegazione, prodotto da \code{CONSTRUCT}, \`e
+        visualizzato e navigabile nell'interfaccia.
+\end{enumerate}
+
+La differenza rispetto a un filtro collaborativo \`e paradigmatica: la
+similarit\`a non \`e una distanza in uno spazio latente ma un
+\emph{percorso nel grafo di conoscenza}, che l'utente pu\`o ispezionare.
+Il punteggio \`e un'euristica trasparente, non un modello appreso.
+
+\subsection{Competency questions}
+
+Seguendo la metodologia del corso, prima della modellazione sono state
+definite le domande a cui il sistema deve saper rispondere. Le nove
+\emph{competency questions} (CQ) di CineTrope, implementate in
+\code{cinetrope/queries.py} ed eseguibili dalla UI, dall'API e dalla CLI,
+sono riportate in tabella~\ref{tab:cq}.
+
+\begin{table}[ht]
+\centering
+\caption{Le competency questions di CineTrope.}
+\label{tab:cq}
+\small
+\begin{tabular}{@{}clp{8.6cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Titolo} & \textbf{Domanda} \\
+\midrule
+cq1 & Tropi condivisi & Quali film condividono almeno due tropi con
+\emph{Inception}? \\
+cq2 & Regista e tropo & Quali film sono diretti da persone che hanno
+lavorato su opere con lo stesso tropo? \\
+cq3 & MindBender & Quali film sono classificati come \code{MindBender}
+dalle regole SWRL? \\
+cq4 & Provenienza & Da quale fonte proviene l'asserzione ``Inception usa
+\code{dreams}''? \\
+cq5 & Raccomandazioni & Quali film condividono tropi, regista, attori o
+generi con un film scelto? \\
+cq6 & Collaborazioni & Quali persone sono collegate da
+\code{hasFrequentCollaborator}? \\
+cq7 & Gerarchia generi & Quali generi sono sottogeneri di altri generi? \\
+cq8 & Fonti & Quante triple asserisce ciascun named graph? \\
+cq9 & Co-star & Quali attori hanno recitato insieme? \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Le CQ guidano direttamente le scelte ontologiche: la cq3 richiede una classe
+derivata (\`e una regola, non un dato); la cq4 richiede la provenienza per
+asserzione (named graph); la cq9 richiede una propriet\`a simmetrica; la cq6
+richiede il ponte fra aggregazione ETL e regola SWRL.
+
+\subsection{Fonti dati e materializzazione}
+
+Le fonti esterne del progetto sono:
+
+\begin{itemize}[nosep]
+  \item \textbf{TMDB}: fonte canonica del catalogo. Lo script
+        \code{scripts/import\_tmdb.py} importa 500 film con titolo, anno,
+        regia, primi 10 attori accreditati, generi e \emph{keyword}; ogni
+        keyword diventa un individuo della classe \code{Tropo} e gli ID
+        vengono stabilizzati come \code{TMDB<id>} per evitare duplicati fra
+        importazioni;
+  \item \textbf{DBpedia}: arricchimento federato delle date di nascita dei
+        registi tramite la query \code{SERVICE} descritta nella
+        Sezione~\ref{sec:sparql}; il risultato viene
+        \emph{materializzato} in \code{data/raw/} (file
+        \code{dbpedia\_birthdates.json}) e ricaricato nel named graph
+        dedicato;
+  \item \textbf{Wikidata}: metadati biografici inclusi nel dataset locale
+        \code{data/raw/people.json};
+  \item \textbf{analisi locale}: gerarchia dei generi curata manualmente in
+        \code{data/raw/genres.json}.
+\end{itemize}
+
+La decisione architetturale fondamentale \`e la \textbf{materializzazione
+locale}: nessun endpoint pubblico viene contattato a runtime. Le query
+federate sono usate \emph{solo} durante l'ETL, come raccomandato dal testo
+di progetto, per rendere la demo rapida, ripetibile e indipendente
+dall'indisponibilit\`a dei servizi pubblici. Inoltre, come da indicazioni
+del corso, si \`e preferito un dataset \emph{piccolo ma coerente} a uno
+ampio ma rumoroso: la qualit\`a delle raccomandazioni dipende dalla
+coerenza del grafo, non dalla sua dimensione.
+
+% ============================================================
+\section{L'ontologia CineTrope}\label{sec:ontologia}
+% ============================================================
+
+L'ontologia \`e serializzata in Turtle in
+\code{data/ontology/cinetrope.ttl} e dichiarata come
+\code{owl:Ontology} nel namespace \code{http://example.org/cinetrope\#}
+(prefisso \code{:}). Questa sezione ne descrive i componenti e le scelte di
+modellazione, mettendole in relazione con la teoria.
+
+\subsection{Classi}
+
+La tassonomia delle classi \`e riassunta in
+figura~\ref{fig:classLists} e nel listato~\ref{lst:classi}.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  every node/.style={draw, rounded corners=2pt, align=center, font=\small,
+    inner sep=4pt, minimum height=1.5em},
+  sub/.style={-{Latex[length=2mm]}, thick},
+  label/.style={font=\scriptsize\itshape, midway, right=2pt}
+]
+\node (oa) {\textbf{OperaAudiovisiva}};
+\node[below left=1.05cm and 1.5cm of oa] (film) {Film};
+\node[below right=1.05cm and 1.5cm of oa] (tv) {SerieTV};
+\node[below=1.05cm of film] (mb) {MindBender};
+\node[below right=1.05cm and 0.4cm of film] (persona) {\textbf{Persona}};
+\node[below left=1.05cm and 0.4cm of persona] (regista) {Regista};
+\node[below right=1.05cm and 0.4cm of persona] (attore) {Attore};
+\draw[sub] (film) -- node[label] {subClassOf} (oa);
+\draw[sub] (tv) -- node[label, left=2pt] {subClassOf} (oa);
+\draw[sub] (mb) -- node[label] {subClassOf} (film);
+\draw[sub] (regista) -- node[label] {subClassOf} (persona);
+\draw[sub] (attore) -- node[label] {subClassOf} (persona);
+\end{tikzpicture}
+\caption{Tassonomia principale dell'ontologia CineTrope.}
+\label{fig:classLists}
+\end{figure}
+
+\begin{lstlisting}[style=ttl, caption={Frammento di
+\code{data/ontology/cinetrope.ttl}: classi principali.}, label={lst:classi}]
+@prefix : <http://example.org/cinetrope#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+:OperaAudiovisiva a owl:Class ;
+    rdfs:label "Opera audiovisiva"@it .
+
+:Film a owl:Class ;
+    rdfs:subClassOf :OperaAudiovisiva ;
+    owl:disjointWith :SerieTV ;
+    rdfs:label "Film"@it .
+
+:SerieTV a owl:Class ;
+    rdfs:subClassOf :OperaAudiovisiva .
+
+:Movie a owl:Class ;
+    owl:equivalentClass :Film .
+
+:Regista a owl:Class ; rdfs:subClassOf :Persona .
+:Attore a owl:Class ; rdfs:subClassOf :Persona .
+
+:MindBender a owl:Class ;
+    rdfs:subClassOf :Film ;
+    rdfs:comment "Classe derivata dalla regola SWRL: un film con
+      UnreliableNarrator e TwistEnding e' un MindBender."@it .
+\end{lstlisting}
+
+Le scelte significative sono:
+
+\begin{itemize}
+  \item \textbf{Superclasse \code{OperaAudiovisiva}}: il dominio include
+        film e serie TV; le propriet\`a comuni (\code{hasGenre},
+        \code{directedBy}, \code{starring}, \code{hasTrope},
+        \code{releaseYear}) hanno domain su di essa, cos\`icch\'e la stessa
+        relazione \`e riusabile per entrambi i tipi di opera senza
+        duplicare vocaboli (\emph{union pattern} su classi concrete);
+  \item \textbf{\code{Film owl:disjointWith SerieTV}}: l'assioma di
+        disgiunzione serve esattamente allo scopo visto a lezione ---
+        \emph{rilevare} classificazioni incompatibili nei dati importati;
+        il controllo \code{film\_and\_series} della validazione
+        (Sezione~\ref{sec:validazione}) verifica che nessuna risorsa sia
+        entrambe le cose;
+  \item \textbf{allineamento terminologico}: \code{Movie} \`e dichiarata
+        \code{owl:equivalentClass} di \code{Film}, e \code{TVSeries} di
+        \code{SerieTV}: \`e l'applicazione diretta della
+        conciliazione di termini; un vocabolario esterno che parla di
+        \code{Movie} viene ricondotto automaticamente a \code{Film};
+  \item \textbf{classi di ruolo}: \code{Regista} e \code{Attore} sono
+        sottoclassi di \code{Persona}; un individuo pu\`o avere entrambi i
+        ruoli (non sono disgiunte), cosa frequente nei dati reali;
+  \item \textbf{\code{MindBender} \`e una classe \emph{derivata}}: non \`e
+        mai asserita nei dati, ma \`e conclusa dalla regola SWRL
+        corrispondente (Sezione~\ref{sec:swrl}). Essere sottoclasse di
+        \code{Film} significa che ogni istanza inferita gode anche di tutte
+        le propriet\`a dei film.
+\end{itemize}
+
+Completano il vocabolario di classi: \code{Genere}, \code{Tropo},
+\code{ElementoDescrittivo}, \code{Scena}, \code{Fonte}. La classe
+\code{ElementoDescrittivo} modella le keyword TMDB non narrative
+(ambientazioni, oggetti, contesti): nell'importazione corrente tutte le
+keyword sono trattate come \code{Tropo} per massimizzare la copertura delle
+raccomandazioni, ma la distinzione resta disponibile nell'ontologia per una
+curation futura --- esempio di come l'ontologia codifichi anche la
+\emph{visione} del dominio, non solo i dati presenti.
+
+\subsection{Propriet\`a}
+
+Il listato~\ref{lst:props} mostra la dichiarazione tipica delle
+propriet\`a; la tabella~\ref{tab:props} riporta per ciascuna domain, range
+e caratteristiche.
+
+\begin{lstlisting}[style=ttl, caption={Frammento dell'ontologia:
+propriet\`a inverse, simmetriche ed equivalente.}, label={lst:props}]
+:directedBy a owl:ObjectProperty ;
+    owl:inverseOf :directorOf ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range :Regista .
+
+:coStarsWith a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :Attore ;
+    rdfs:range :Attore .
+
+:usesTrope a owl:ObjectProperty ;
+    owl:equivalentProperty :hasTrope ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range :Tropo .
+
+:releaseYear a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ;
+    rdfs:range xsd:gYear .
+\end{lstlisting}
+
+\begin{table}[ht]
+\centering
+\caption{Propriet\`a dell'ontologia CineTrope.}
+\label{tab:props}
+\footnotesize
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Propriet\`a} & \textbf{Domain} & \textbf{Range} & \textbf{Caratteristiche} \\
+\midrule
+\code{hasGenre} & OperaAudiovisiva & Genere & --- \\
+\code{subGenreOf} & Genere & Genere & transitiva \\
+\code{directedBy} & OperaAudiovisiva & Regista & inversa di \code{directorOf} \\
+\code{directorOf} & Regista & OperaAudiovisiva & inversa di \code{directedBy} \\
+\code{starring} & OperaAudiovisiva & Attore & inversa di \code{actedIn} \\
+\code{actedIn} & Attore & OperaAudiovisiva & inversa di \code{starring} \\
+\code{coStarsWith} & Attore & Attore & simmetrica \\
+\code{hasTrope} & OperaAudiovisiva & Tropo & inversa di \code{tropeUsedIn} \\
+\code{usesTrope} & OperaAudiovisiva & Tropo & equivalente a \code{hasTrope} \\
+\code{tropeUsedIn} & Tropo & OperaAudiovisiva & inversa di \code{hasTrope} \\
+\code{hasElement} & OperaAudiovisiva & ElementoDescrittivo & inv.\ \code{elementUsedIn} \\
+\code{hasScene} & OperaAudiovisiva & Scena & inversa di \code{sceneIn} \\
+\code{annotatedWith} & Scena & Tropo & --- \\
+\code{statedBy} & Scena & Fonte & --- \\
+\code{collaboratedWith} & Persona & Persona & simmetrica \\
+\code{frequentCollaboration} & Persona & Persona & simmetrica, da ETL \\
+\code{hasFrequentCollaborator} & Persona & Persona & simmetrica, inferita SWRL \\
+\code{releaseYear} & OperaAudiovisiva & \code{xsd:gYear} & datatype property \\
+\code{birthDate} & Persona & \code{xsd:date} & datatype property \\
+\midrule
+\multicolumn{4}{@{}l@{}}{\emph{vocabolario del grafo di spiegazione}} \\
+\code{recommends} & Film & Film & --- \\
+\code{recommendedBecause} & Film & Tropo & --- \\
+\code{sharesTropeWith} & Film & Film & --- \\
+\code{sharesDirectorWith} & Film & Film & --- \\
+\code{sharesActorWith} & Film & Film & --- \\
+\code{sharesGenreWith} & Film & Film & --- \\
+\code{assertedIn} & rdfs:Resource & Fonte & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ogni costrutto ha una funzione precisa nell'applicazione:
+
+\begin{itemize}
+  \item \textbf{coppie inverse} (\code{directedBy}/\code{directorOf},
+        \code{starring}/\code{actedIn}, \code{hasTrope}/\code{tropeUsedIn},
+        \code{hasElement}/\code{elementUsedIn},
+        \code{hasScene}/\code{sceneIn}): la lezione sul ``matrimonio di
+        Shakespeare'' ha mostrato il problema: senza inverso dichiarato, la
+        query \code{SELECT ?film WHERE \{?film :directorOf :Nolan\}} non
+        trova nulla. CineTrope dichiara gli inversi in modo che il reasoner
+        \emph{completi} il grafo in entrambe le direzioni; i contatori della
+        Sezione~\ref{sec:reasoning} mostrano 554 \code{directorOf} e 4.875
+        \code{actedIn} \emph{inferite} a partire dai dati direzionali
+        importati;
+  \item \textbf{propriet\`a simmetriche} (\code{coStarsWith},
+        \code{collaboratedWith}, \code{frequentCollaboration},
+        \code{hasFrequentCollaborator}): il fatto ``due attori recitano
+        insieme'' \`e per natura simmetrico; dichiarare
+        \code{owl:SymmetricProperty} evita di asserire entrambe le direzioni
+        e --- come dettagliato nella Sezione~\ref{sec:reasoning} --- il
+        progetto lascia \code{coStarsWith} monodirezionale nei dati derivati
+        proprio per rendere l'inferenza OWL visibile e verificabile;
+  \item \textbf{propriet\`a equivalente}: \code{usesTrope
+        owl:equivalentProperty hasTrope} \`e l'applicazione della
+        conciliazione di termini vista a lezione (il caso
+        \code{borrows}/\code{checkedOut} delle biblioteche): un vocabolario
+        esterno che usi \code{usesTrope} viene fuso con quello interno senza
+        duplicare i dati;
+  \item \textbf{\code{subGenreOf} transitiva}: la gerarchia dei generi
+        (\emph{ScienceFiction subGenreOf Fantascienza}, ecc.) beneficia della
+        transitivit\`a: le query che attraversano la gerarchia non devono
+        enumerare i livelli intermedi.
+\end{itemize}
+
+\subsection{I generi come individui}
+
+Una scelta di modellazione discussa esplicitamente: i generi sono
+\textbf{individui} della classe \code{Genere}, collegati da
+\code{subGenreOf}, e non classi OWL. L'alternativa --- il \emph{punning}
+OWL 2, in cui un genere come \code{ScienceFiction} sarebbe
+contemporaneamente una \code{owl:Class} (per classificare i film) e un
+individuo di \code{Genere} (per avere etichette, gerarchia e metadati) ---
+\`e stata valutata e scartata, perch\'e la modellazione a individui basta
+agli scopi del progetto: la relazione film--genere \`e una normale propriet\`a
+\code{hasGenre}, la gerarchia \`e una propriet\`a transitiva tra individui, e
+le query restano uniformi. Durante l'ETL l'identificatore TMDB
+\code{SciFi} viene normalizzato in \code{ScienceFiction}, mentre
+l'allineamento tra terminologie \`e delegato a
+\code{owl:equivalentClass}/\code{owl:equivalentProperty} dove serve. Questa
+\`e un'applicazione consapevole del principio ``la conciliazione dei
+termini si fa con assiomi, non rinominando i dati''.
+
+\subsection{Restrizioni OWL e validazione}\label{sec:validazione}
+
+L'ontologia dichiara due restrizioni di cardinalit\`a:
+
+\begin{lstlisting}[style=ttl, caption={Restrizioni di cardinalit\`a su
+\code{Film}.}]
+:Film rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty :directedBy ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger
+] .
+
+:Film rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty :releaseYear ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger
+] .
+\end{lstlisting}
+
+Come discusso a lezione, il reasoner serve a \emph{individuare} le
+incoerenze, non a correggerle. C'\`e per\`o un limite tecnico preciso,
+dichiarato onestamente nel progetto: il profilo \textbf{OWL RL} non copre
+tutte le cardinalit\`a di OWL 2 DL (in particolare non le cardinalit\`a
+qualificate su classi arbitrarie), quindi il progetto affianca alle
+restrizioni dei \textbf{controlli SPARQL espliciti} eseguiti
+all'ETL e salvati nel report di build:
+
+\begin{itemize}[nosep]
+  \item \code{missing\_director}: film senza alcun \code{directedBy}
+        (violazione del vincolo min);
+  \item \code{missing\_year}: film senza \code{releaseYear};
+  \item \code{multiple\_years}: film con pi\`u anni di uscita (violazione
+        del vincolo max, individuata con \code{GROUP BY}/\code{HAVING});
+  \item \code{film\_and\_series}: risorse sia \code{Film} sia
+        \code{SerieTV} (violazione della disgiunzione);
+  \item \code{owl\_nothing}: individui classificati \code{owl:Nothing} dal
+        reasoner, cio\`e rese inconsistenti da qualche assioma.
+\end{itemize}
+
+Nel dataset corrente tutti i controlli restituiscono zero violazioni. Si
+noti la coerenza metodologica con l'OWA: i controlli \emph{segnalano} dati
+mancanti o ambigui senza sostituirli con valori inventati.
+
+\subsection{Named graph e provenienza}
+
+Le fonti sono modellate come individui della classe \code{Fonte} e usate
+come nomi dei relativi named graph. La tabella~\ref{tab:graphs} riporta
+l'organizzazione del dataset (un file TriG con quadruple).
+
+\begin{table}[ht]
+\centering
+\caption{Named graph del dataset CineTrope.}
+\label{tab:graphs}
+\small
+\begin{tabular}{@{}lp{9.8cm}@{}}
+\toprule
+\textbf{Named graph} & \textbf{Contenuto} \\
+\midrule
+\code{:Ontology} & schema RDFS/OWL e vocabolario (cinetrope.ttl) \\
+\code{:TMDB} & titoli, anni, regia, cast, generi e keyword importati \\
+\code{:Wikidata} & metadati strutturati delle persone (date di nascita) \\
+\code{:DBpedia} & date di nascita arricchite via \code{SERVICE} \\
+\code{:TvTropes} & riservato alle annotazioni narrative esterne \\
+\code{:LocalAnalysis} & generi e gerarchie curati nel dataset locale \\
+\code{:Derived} & co-star e collaborazioni calcolate con \code{CONSTRUCT} \\
+\code{:Inferred} & chiusura OWL RL e conseguenze SWRL \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La provenienza \`e interrogabile direttamente, senza reificazione, come
+illustrato a lezione:
+
+\begin{lstlisting}[style=sparql, caption={Provenienza di un'asserizione
+tramite named graph (\code{05\_provenance\_assertion.rq}).}]
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?source ?sourceLabel WHERE {
+  GRAPH ?source {
+    :TMDB27205 :hasTrope :dreams .
+  }
+  OPTIONAL { ?source rdfs:label ?sourceLabel }
+}
+\end{lstlisting}
+
+Il grafo di spiegazione collega poi i fatti alle fonti con la propriet\`a
+\code{assertedIn}, cos\`icch\'e anche la visualizzazione vis.js espone la
+provenienza di ogni arco. Il confronto fra sorgenti --- tema della lezione
+sull'integrazione --- \`e qui ridotto a una sola clausola
+\code{GRAPH ?source}.
+
+% ============================================================
+\section{Pipeline dati e architettura}\label{sec:pipeline}
+% ============================================================
+
+L'architettura segue la pipeline consigliata dal testo di progetto
+(API/ETL $\rightarrow$ triple RDF $\rightarrow$ ontologia $\rightarrow$
+reasoner $\rightarrow$ store $\rightarrow$ interfaccia). La
+figura~\ref{fig:arch} mostra il flusso di costruzione e la
+tabella~\ref{tab:moduli} i componenti software.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  node distance=0.55cm and 1.4cm,
+  box/.style={draw, rounded corners=2pt, align=center, font=\scriptsize,
+    inner sep=5pt, minimum width=2.6cm, minimum height=1.6em},
+  data/.style={box, fill=black!4},
+  proc/.style={box},
+  store/.style={box, fill=black!10},
+  app/.style={box, fill=black!4},
+  arr/.style={-{Latex[length=2mm]}, thick}
+]
+\node[data] (raw) {data/raw/*.json\\TMDB, DBpedia,\\Wikidata, generi};
+\node[proc, right=of raw] (etl) {ETL rdflib\\(cinetrope/etl.py)};
+\node[data, right=of etl] (ont) {cinetrope.ttl\\+ regole SWRL};
+\node[store, below=of etl] (ds) {Dataset rdflib\\named graph per fonte};
+\node[proc, right=of ds] (derive) {CONSTRUCT derivati\\co-star, collaborazioni};
+\node[proc, below=of ds] (owlrl) {OWL RL (owlrl)\\+ SWRL custom};
+\node[store, below=of owlrl] (trig) {store.trig\\+ build\_report.json};
+\node[app, below=of derive] (api) {FastAPI + Jinja2\\API JSON};
+\node[app, below=of api] (ui) {vis.js / CLI\\UI web};
+
+\draw[arr] (raw) -- (etl);
+\draw[arr] (ont) -- (ds);
+\draw[arr] (etl) -- (ds);
+\draw[arr] (ds) -- (derive);
+\draw[arr] (derive) -- (owlrl);
+\draw[arr] (owlrl) -- (trig);
+\draw[arr] (trig) -- (api);
+\draw[arr] (api) -- (ui);
+\end{tikzpicture}
+\caption{Pipeline di costruzione del knowledge graph e stack applicativo.}
+\label{fig:arch}
+\end{figure}
+
+\begin{table}[ht]
+\centering
+\caption{Componenti software del progetto.}
+\label{tab:moduli}
+\small
+\begin{tabular}{@{}lp{10.4cm}@{}}
+\toprule
+\textbf{File} & \textbf{Ruolo} \\
+\midrule
+\code{cinetrope/etl.py} & costruisce il dataset RDF e i named graph \\
+\code{cinetrope/reasoning.py} & OWL RL con \code{owlrl}, inferenze e validazione \\
+\code{cinetrope/swrl.py} & parser ed esecuzione delle regole SWRL \\
+\code{cinetrope/queries.py} & caricamento, rendering e competency questions \\
+\code{cinetrope/store.py} & API applicativa: catalogo, raccomandazioni, spiegazioni, provenienza \\
+\code{cinetrope/web.py} & rotte FastAPI e template \\
+\code{cinetrope/cli.py} & interfaccia da terminale \\
+\code{cinetrope/tmdb.py} & client TMDB e importazione keyword/cast \\
+\code{scripts/import\_tmdb.py} & importazione e aggiornamento del catalogo TMDB \\
+\code{scripts/enrich\_birthdates.py} & arricchimento federato da DBpedia \\
+\code{scripts/build\_store.py} & build completo: ETL + reasoner + validazione \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{ETL: dai JSON alle triple}
+
+La funzione \code{build\_catalog} in \code{cinetrope/etl.py} legge i dati
+grezzi e popola un \code{Dataset} rdflib in modalit\`a \code{default\_union}:
+
+\begin{itemize}[nosep]
+  \item \code{\_load\_ontology} carica \code{cinetrope.ttl} nel grafo
+        \code{:Ontology};
+  \item \code{\_add\_source\_facts} scrive generi e gerarchia in
+        \code{:LocalAnalysis} e le keyword TMDB in \code{:TMDB} (ogni
+        keyword diventa un individuo \code{:Tropo} con \code{rdfs:label}
+        in italiano);
+  \item \code{\_add\_people} crea le persone con ID locali derivati dal nome
+        (\code{slugify}) e i tipi \code{:Persona}, \code{:Regista},
+        \code{:Attore}; le date di nascita finiscono nel grafo della fonte
+        (\code{:DBpedia} se arricchite, \code{:Wikidata} altrimenti);
+  \item \code{\_add\_films} crea un individuo per opera con ID stabile
+        \code{TMDB<id>}, tipi \code{:Film}/\code{:SerieTV},
+        \code{rdfs:label}, \code{:releaseYear} tipato \code{xsd:gYear},
+        e le relazioni \code{:hasGenre}, \code{:directedBy},
+        \code{:starring}, \code{:hasTrope};
+  \item \code{\_add\_derived\_relations} calcola con \code{CONSTRUCT} le
+        co-star e le collaborazioni e, con una query aggregata, individua
+        le collaborazioni frequenti.
+\end{itemize}
+
+Il punto metodologicamente interessante \`e la divisione del lavoro fra
+\textbf{ETL, SPARQL e regole}: le relazioni che dipendono da conteggi
+(\`e il limite delle aggregazioni in SWRL) sono calcolate da query
+\code{CONSTRUCT} con \code{GROUP BY}/\code{HAVING} e materializzate nel
+grafo \code{:Derived}; le conseguenze logiche sono demandate al reasoner.
+Un esempio \`e \code{derive\_co\_stars.rq}:
+
+\begin{lstlisting}[style=sparql, caption={Materializzazione ETL delle
+co-star (una sola direzione, per mostrare l'inferenza OWL).}]
+PREFIX : <http://example.org/cinetrope#>
+
+CONSTRUCT { ?actor1 :coStarsWith ?actor2 . }
+WHERE {
+  ?work :starring ?actor1, ?actor2 .
+  FILTER (STR(?actor1) < STR(?actor2))
+}
+\end{lstlisting}
+
+La condizione \code{STR(?a) < STR(?b)} garantisce una sola tripla per
+coppia; la direzione inversa --- come vedremo --- sar\`a inferita dalla
+simmetria dichiarata in OWL. Le collaborazioni frequenti usano invece
+l'aggregazione:
+
+\begin{lstlisting}[style=sparql, caption={Rilevamento delle collaborazioni
+frequenti: il conteggio che SWRL non pu\`o fare.}, label={lst:frequent}]
+PREFIX : <http://example.org/cinetrope#>
+
+CONSTRUCT { ?p1 :frequentCollaboration ?p2 . }
+WHERE {
+  SELECT ?p1 ?p2 (COUNT(DISTINCT ?work) AS ?works)
+  WHERE {
+    ?p1 :collaboratedWith ?p2 .
+    ?work :directedBy|:starring ?p1 , ?p2 .
+  }
+  GROUP BY ?p1 ?p2
+  HAVING (COUNT(DISTINCT ?work) > 3)
+}
+\end{lstlisting}
+
+La regola SWRL completa poi il quadro collegando gli individui con
+\code{hasFrequentCollaborator} (Sezione~\ref{sec:swrl}).
+
+% ============================================================
+\section{Ragionamento automatico}\label{sec:reasoning}
+% ============================================================
+
+\subsection{Chiusura OWL RL}
+
+Il ragionamento \`e implementato in \code{cinetrope/reasoning.py} con la
+libreria \code{owlrl}:
+
+\begin{lstlisting}[style=py, caption={Esecuzione della chiusura OWL RL e
+delle regole SWRL (cinetrope/reasoning.py).}]
+def run_reasoning(dataset):
+    union = _union_graph(dataset)      # unione di tutti i grafi espliciti
+    explicit = set(union)
+
+    _run_owlrl(union)                  # prima chiusura OWL RL + RDFS
+    swrl_stats = apply_swrl(union, load_rule_graph())
+    _run_owlrl(union)                  # seconda chiusura dopo le regole
+
+    inferred = {                        # solo triple che toccano il ns CineTrope
+        (s, p, o) for s, p, o in (set(union) - explicit)
+        if _is_cinetrope(s) or _is_cinetrope(p) or _is_cinetrope(o)
+        and not (p == OWL.sameAs and s == o)
+    }
+    dataset.graph(CT.Inferred).add(...)  # salvate nel grafo :Inferred
+\end{lstlisting}
+
+La strategia \`e in tre passi:
+
+\begin{enumerate}[nosep]
+  \item i named graph espliciti vengono fusi in un grafo di lavoro
+        (\emph{merging}, favorito dalla natura stessa di RDF);
+  \item \code{DeductiveClosure(OWLRL\_Semantics)} con
+        \code{rdfs\_closure=True} espande la chiusura OWL RL + RDFS ---
+        ovvero \emph{materializza} le conseguenze delle propriet\`a
+        inverse, simmetriche, equivalenti, delle gerarchie di classi e
+        propriet\`a e dei domain/range;
+  \item le regole SWRL vengono applicate sul grafo gi\`a espanso, e una
+        seconda passata di OWL RL stabilizza le eventuali conseguenze
+        combinate.
+\end{enumerate}
+
+Le nuove triple, filtrate a quelle che coinvolgono il namespace CineTrope
+(ed escludendo le tautologie \code{owl:sameAs} introdotte dalla chiusura),
+vengono scritte nel named graph \code{:Inferred}. La separazione
+\emph{dati espliciti / dati inferiti} in named graph diversi \`e essa
+stessa un'applicazione del pattern di provenienza: si pu\`o sempre
+distinguere ci\`o che \`e stato asserito da ci\`o che \`e stato dedotto.
+
+\subsection{Risultati dell'inferenza}
+
+Sul dataset corrente (500 film, 3.929 persone, 3.514 tropi, 21 generi,
+161.843 triple totali) la chiusura produce \textbf{52.608 triple
+inferite}, ripartite come in tabella~\ref{tab:inference}.
+
+\begin{table}[ht]
+\centering
+\caption{Ripartizione delle 52.608 triple inferite per predicato
+(build\_report.json).}
+\label{tab:inference}
+\small
+\begin{tabular}{@{}lr@{\hspace{1.4cm}}lr@{}}
+\toprule
+\textbf{Predicato} & \textbf{Triple} & \textbf{Predicato} & \textbf{Triple} \\
+\midrule
+\code{coStarsWith} & 20.807 & \code{directorOf} & 554 \\
+\code{rdf:type} & 10.519 & \code{subClassOf} & 110 \\
+\code{tropeUsedIn} & 7.727 & \code{hasFrequentCollaborator} & 92 \\
+\code{usesTrope} & 7.727 & \code{domain}/\code{range} & 54 / 49 \\
+\code{actedIn} & 4.875 & \code{equivalentClass} & 35 \\
+ & & \code{subPropertyOf} & 30 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La lettura della tabella \`e una lettura della teoria in azione:
+
+\begin{itemize}
+  \item \textbf{20.807 \code{coStarsWith}} inferite: l'ETL materializza una
+        sola direzione per ogni coppia di co-star; la simmetria dichiarata
+        in OWL produce l'altra direzione. \`E la dimostrazione pratica del
+        costrutto \code{owl:SymmetricProperty} visto a lezione;
+  \item \textbf{7.727 \code{tropeUsedIn} e 7.727 \code{usesTrope}}: la prima
+        \`e l'inverso di \code{hasTrope}, la seconda la conseguenza
+        dell'\code{owl:equivalentProperty}. Le 7.726 asserzioni
+        \code{hasTrope} importate da TMDB generano, senza alcuna duplicazione
+        manuale, il doppio del valore interrogabile;
+  \item \textbf{4.875 \code{actedIn} e 554 \code{directorOf}}: gli inversi
+        di \code{starring} e \code{directedBy};
+  \item \textbf{10.519 \code{rdf:type}}: propagazione lungo le gerarchie
+        (\code{Regista}/\code{Attore} $\rightarrow$ \code{Persona},
+        \code{Film} $\rightarrow$ \code{OperaAudiovisiva}) e classificazione
+        automatica tramite \code{rdfs:domain}/\code{rdfs:range};
+  \item \textbf{92 \code{hasFrequentCollaborator}}: conseguenze della regola
+        SWRL, non di assiomi OWL.
+\end{itemize}
+
+\subsection{Il motore SWRL custom}\label{sec:swrl}
+
+Le regole SWRL sono dichiarate in
+\code{data/ontology/cinetrope-swrl.n3}, in serializzazione RDF del
+metamodello SWRL (\code{swrl:Imp}, \code{swrl:body}, \code{swrl:head}, con
+atomi \code{swrl:ClassAtom} e \code{swrl:IndividualPropertyAtom}). Il
+formato N3 \`e stato scelto perch\'e il parser Turtle di rdflib non
+supporta le variabili \code{?x} come termini RDF. La regola principale:
+
+\begin{lstlisting}[style=ttl, caption={La regola MindBenderRule in
+\code{cinetrope-swrl.n3} (metamodello SWRL in RDF).}]
+@prefix : <http://example.org/cinetrope#> .
+@prefix swrl: <http://www.w3.org/2003/11/swrl#> .
+
+:MindBenderRule a swrl:Imp ;
+    rdfs:label "Un film con narratore inaffidabile e finale a sorpresa
+                e' un MindBender"@it ;
+    swrl:body (
+        [ a swrl:ClassAtom ;
+          swrl:classPredicate :Film ;
+          swrl:argument1 ?f ]
+        [ a swrl:IndividualPropertyAtom ;
+          swrl:propertyPredicate :hasTrope ;
+          swrl:argument1 ?f ;
+          swrl:argument2 :UnreliableNarrator ]
+        [ a swrl:IndividualPropertyAtom ;
+          swrl:propertyPredicate :hasTrope ;
+          swrl:argument1 ?f ;
+          swrl:argument2 :TwistEnding ]
+    ) ;
+    swrl:head (
+        [ a swrl:ClassAtom ;
+          swrl:classPredicate :MindBender ;
+          swrl:argument1 ?f ]
+    ) .
+\end{lstlisting}
+
+Il file parallelo \code{cinetrope-rules.swrl} riporta la stessa regola in
+sintassi leggibile, corrispondente a quella vista a lezione:
+
+\begin{lstlisting}[style=txt, caption={La stessa regola in sintassi
+SWRL leggibile.}]
+Film(?f) ^ hasTrope(?f, :UnreliableNarrator)
+       ^ hasTrope(?f, :TwistEnding)
+  -> MindBender(?f)
+
+Persona(?p1) ^ Persona(?p2)
+       ^ collaboratedWith(?p1, ?p2)
+       ^ frequentCollaboration(?p1, ?p2)
+  -> hasFrequentCollaborator(?p1, ?p2)
+\end{lstlisting}
+
+Il motore (\code{cinetrope/swrl.py}) implementa un \textbf{forward
+chaining} fino al punto fisso (massimo 20 iterazioni): per ogni regola,
+gli atomi del corpo vengono \emph{abbinati} al grafo con un algoritmo di
+unificazione (\code{\_match\_atom}) che propaga i binding delle variabili
+da un atomo al successivo; ogni binding completo istanzia la testa e
+aggiunge le triple mancanti. Il corpo della seconda regola mostra la
+collaborazione fra teoria e pratica del corso: \code{collaboratedWith} \`e
+materiale derivato dall'ETL, \code{frequentCollaboration} \`e asserita
+dall'aggregazione SPARQL del listato~\ref{lst:frequent}, e la regola
+\emph{collega} i due mondi producendo \code{hasFrequentCollaborator}.
+L'esecuzione corrente produce 92 inferenze.
+
+Un limite dichiarato del motore: il supporto si ferma agli atomi di classe
+(\code{ClassAtom}) e di propriet\`a (\code{IndividualPropertyAtom}) --- non
+\`e un implementazione completa di SWRL (niente built-in, niente atomi
+\code{SameAs}/\code{DifferentFrom}). La scelta \`e coerente con l'uso
+didattico: poche regole, semanticamente trasparenti, verificate dai test.
+
+% ============================================================
+\section{SPARQL al lavoro: raccomandazioni e spiegazioni}\label{sec:sparql}
+% ============================================================
+
+Le tredici query del progetto sono in \code{data/queries/}, commentate.
+Questa sezione analizza le due pi\`u importanti e i pattern ricorrenti.
+
+\subsection{La query di raccomandazione}
+
+La query \code{03\_recommendations.rq} calcola il punteggio combinato. Il
+problema ingegneristico --- evitare prodotti cartesiani fra le quattro
+dimensioni --- \`e risolto con quattro sottoquery \code{OPTIONAL} aggregate
+e unite sul film:
+
+\begin{lstlisting}[style=sparql, caption={Struttura della query di
+raccomandazione (semplificata).}]
+PREFIX : <http://example.org/cinetrope#>
+
+SELECT ?film ?title ?year
+       (COALESCE(?sharedTropes, 0) AS ?sharedTropes)
+       ... (COALESCE ... per registi, attori, generi) ...
+       (COALESCE(?sharedTropes,0) * {{TROPE_WEIGHT}}
+        + COALESCE(?sharedDirectors,0) * {{DIRECTOR_WEIGHT}}
+        + COALESCE(?sharedActors,0) * {{ACTOR_WEIGHT}}
+        + COALESCE(?sharedGenres,0) * {{GENRE_WEIGHT}} AS ?score)
+WHERE {
+  ?film a :Film ; rdfs:label ?title .
+  FILTER (?film != <{{SEED}}>)
+  OPTIONAL { ?film :releaseYear ?year }
+
+  OPTIONAL {
+    SELECT ?film (COUNT(DISTINCT ?trope) AS ?sharedTropes) WHERE {
+      <{{SEED}}> :hasTrope ?trope .
+      ?film :hasTrope ?trope .
+      FILTER (?film != <{{SEED}}>)
+    } GROUP BY ?film
+  }
+  ... tre OPTIONAL analoghi per directedBy, starring, hasGenre ...
+}
+ORDER BY DESC(?score) DESC(?sharedTropes) ?title
+LIMIT {{LIMIT}}
+\end{lstlisting}
+
+Ogni sottoquery conta le entit\`a condivise con il film seme; la
+\code{COALESCE} gestisce i film senza sovrapposizioni (il valore
+\code{UNBOUND} \`e il comportamento previsto di \code{OPTIONAL}, non un
+errore). I \emph{pesi} sono parametri del template, passati
+dall'applicazione in base al preset scelto dall'utente
+(tabella~\ref{tab:weights}). Grazie al layer applicativo, il punteggio
+resta \emph{trasparente e motivabile}: la spiegazione riporta i conteggi
+grezzi per dimensione accanto al punteggio.
+
+\begin{table}[ht]
+\centering
+\caption{Preset di priorit\`a e pesi associati.}
+\label{tab:weights}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Preset} & \textbf{Tropi} & \textbf{Regia} & \textbf{Cast} & \textbf{Generi} \\
+\midrule
+bilanciata & 3 & 2 & 2 & 5 \\
+priorit\`a cast & 3 & 2 & 6 & 3 \\
+priorit\`a regia & 3 & 6 & 2 & 3 \\
+priorit\`a tropi & 6 & 2 & 2 & 3 \\
+priorit\`a generi & 3 & 2 & 2 & 8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Il grafo di spiegazione con CONSTRUCT}
+
+La query \code{04\_explanation\_construct.rq} \`e il cuore della
+spiegabilit\`a: produce un grafo RDF che \emph{racconta} la
+raccomandazione. Il template \code{CONSTRUCT} emette la tripla
+\code{:recommends}, la propriet\`a di condivisione opportuna
+(\code{:sharesTropeWith}, \code{:sharesDirectorWith},
+\code{:sharesActorWith}, \code{:sharesGenreWith}), i collegamenti alle
+entit\`a condivise con le rispettive etichette e la provenienza tramite
+\code{:assertedIn ?source}; il pattern \code{WHERE} \`e un \code{UNION}
+di quattro rami, uno per dimensione, ciascuno dei quali interroga il
+named graph della fonte:
+
+\begin{lstlisting}[style=sparql, caption={Un ramo della query di
+spiegazione (tropi condivisi con provenienza).}]
+CONSTRUCT {
+  <{{SEED}}> :recommends <{{REC}}> .
+  <{{SEED}}> ?sharePredicate <{{REC}}> .
+  <{{REC}}> :recommendedBecause ?trope .
+  <{{SEED}}> :hasTrope ?trope .
+  <{{REC}}> :hasTrope ?trope .
+  <{{REC}}> :assertedIn ?source .
+}
+WHERE {
+  {
+    GRAPH ?source { <{{REC}}> :hasTrope ?trope }
+    BIND (:sharesTropeWith AS ?sharePredicate)
+    ?trope rdfs:label ?tropeLabel .
+    ?source rdfs:label ?sourceLabel .
+    FILTER (?source IN (:Wikidata, :DBpedia, :TMDB,
+                        :TvTropes, :LocalAnalysis))
+  }
+  UNION { ... ramo regista ... }
+  UNION { ... ramo cast ... }
+  UNION { ... ramo generi ... }
+}
+\end{lstlisting}
+
+Il risultato \`e un piccolo grafo (film seme $\rightarrow$ raccomandazione
+$\rightarrow$ tropi/registi/attori/generi condivisi $\rightarrow$ fonti)
+che il backend serializza in JSON e l'interfaccia disegna con vis.js.
+Ogni \emph{perch\'e} della raccomandazione \`e un arco ispezionabile,
+con la fonte a un clic. Si noti l'uso di \code{BIND} per selezionare la
+propriet\`a di condivisione in funzione del ramo \code{UNION}: una
+tecnica che tiene la query dichiarativa pura.
+
+\subsection{Le altre query e i pattern ricorrenti}
+
+Le restanti query coprono i pattern del corso:
+
+\begin{itemize}
+  \item \code{02\_shared\_tropes.rq} e \code{10\_cq\_shared\_two\_tropes.rq}:
+        classificazione per sovrapposizione con \code{COUNT(DISTINCT)},
+        \code{GROUP BY}, \code{ORDER BY DESC} e \code{HAVING (COUNT >= 2)}
+        --- esattamente la forma suggerita nel testo di progetto;
+  \item \code{11\_cq\_director\_trope.rq}: percorso semantico attraverso due
+        relazioni (\code{directedBy} $\wedge$ \code{hasTrope}), verifica
+        cq2;
+  \item \code{12\_cq\_co\_stars.rq}: sfrutta direttamente
+        \code{coStarsWith}; essendo la relazione completa (esplicita +
+        inferita) nel grafo, la query non deve espandere la simmetria;
+  \item \code{09\_genre\_hierarchy.rq}: gerarchia dei generi via
+        \code{subGenreOf};
+  \item \code{08\_source\_stats.rq}: statistiche per named graph con
+        \code{GRAPH ?g}, per rendere verificabile il contributo di ogni
+        fonte (cq8);
+  \item \code{06\_mindbender.rq} e \code{07\_frequent\_collaborators.rq}:
+        interroga classi e propriet\`a che \emph{esistono solo} nel grafo
+        \code{:Inferred} --- uso effettivo dell'inferenza, non dei soli
+        dati espliciti.
+\end{itemize}
+
+\subsection{Federazione SERVICE in ETL}
+
+La federazione \`e confinata nell'ETL, come raccomandato dal testo di
+progetto. La query \code{enrich\_birthdates\_service.rq} interroga
+l'endpoint DBpedia per le date di nascita dei registi:
+
+\begin{lstlisting}[style=sparql, caption={Arricchimento federato:
+estrazione delle date di nascita da DBpedia.}]
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX dbr: <http://dbpedia.org/resource/>
+PREFIX : <http://example.org/cinetrope#>
+
+SELECT ?person ?birthDate WHERE {
+  ?person a :Regista .
+  SERVICE <https://dbpedia.org/sparql> {
+    ?dbpediaPerson dbo:birthDate ?birthDate .
+    ?person owl:sameAs ?dbpediaPerson .
+  }
+}
+\end{lstlisting}
+
+Il risultato \`e salvato in \code{data/raw/dbpedia\_birthdates.json} e
+ricaricato nel named graph \code{:DBpedia} al build successivo: la demo
+usa solo il dato locale, rendendo il sistema riproducibile e immune
+dall'indisponibilit\`a degli endpoint pubblici.
+
+% ============================================================
+\section{Applicazione web, API e CLI}\label{sec:web}
+% ============================================================
+
+\subsection{Stack applicativo}
+
+Il back-end \`e un'applicazione FastAPI con template Jinja2; il front-end
+usa vis.js per il grafo interattivo della spiegazione. Al primo avvio la
+web app costruisce automaticamente lo store se
+\code{data/generated/store.trig} non esiste (ETL + reasoner + validazione
++ scrittura del report). Le rotte principali sono in
+tabella~\ref{tab:rotte}.
+
+\begin{table}[ht]
+\centering
+\caption{Rotte della web app.}
+\label{tab:rotte}
+\footnotesize
+\begin{tabular}{@{}lp{10.2cm}@{}}
+\toprule
+\textbf{Rotta} & \textbf{Descrizione} \\
+\midrule
+\code{/} & catalogo, statistiche del grafo, selezione del film \\
+\code{/recommendations/\{film\}} & cinque raccomandazioni motivate con
+preset di priorit\`a (\code{?priority=cast|director|tropes|genres}) \\
+\code{/explanation/\{seed\}/\{rec\}} & grafo interattivo della spiegazione
+(vis.js) con triple e serializzazione Turtle \\
+\code{/queries} & competency questions con risultati e testo della query \\
+\code{/sources} & statistiche e ruolo dei named graph \\
+\code{/health} & stato sintetico del servizio \\
+\code{/api/films} & catalogo in JSON \\
+\code{/api/recommendations/\{seed\}} & raccomandazioni in JSON \\
+\code{/api/explanation/\{seed\}/\{rec\}} & grafo di spiegazione in JSON \\
+\code{/api/provenance/\{film\}/\{trope\}} & provenienza di un'asserzione \\
+\code{/api/competency-questions} & tutte le CQ in JSON \\
+\code{/api/stats} & statistiche del knowledge graph \\
+\code{/docs} & documentazione OpenAPI generata \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{CLI e test}
+
+La CLI (\code{python -m cinetrope ...}) espone \code{list},
+\code{recommend}, \code{explain}, \code{cq}, \code{stats} e l'opzione
+\code{--rebuild}, utile per rigenerare lo store dal terminale. La suite
+\code{pytest} copre: costruzione del catalogo e dei named graph,
+regole SWRL, raccomandazioni (inclusi i preset), grafo di spiegazione,
+provenienza, controlli di validazione, competency questions,
+arricchimento DBpedia e rotte web --- il che rende la pipeline verificabile
+a ogni modifica dell'ontologia o delle query.
+
+% ============================================================
+\section{Valutazione e limiti}\label{sec:valutazione}
+% ============================================================
+
+\subsection{Risultati raggiunti}
+
+Il sistema soddisfa tutti gli obiettivi della Sezione~1: il dataset
+materializzato conta 500 film, 1 serie TV, 3.929 persone, 3.514
+tropi/keyword e 21 generi, per 161.843 triple in otto grafi; il
+ragionamento produce 52.608 inferenze; i cinque controlli di validazione
+sono tutti a zero violazioni; le nove CQ sono eseguibili e la demo web
+funziona offline. La tabella~\ref{tab:risultati} riassume gli indicatori
+del report di build.
+
+\begin{table}[ht]
+\centering
+\caption{Indicatori sintetici del build corrente.}
+\label{tab:risultati}
+\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Indicatore} & \textbf{Valore} \\
+\midrule
+Film / Serie TV & 500 / 1 \\
+Persone / Tropi / Generi & 3.929 / 3.514 / 21 \\
+Triple totali (named graph) & 161.843 \\
+Triple inferite (\code{:Inferred}) & 52.608 \\
+Inferenze SWRL (\code{hasFrequentCollaborator}) & 92 \\
+Coppie di co-star inferite (simmetria) & 20.807 \\
+\code{MindBender} inferiti & 0 \\
+Violazioni di validazione & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Limiti e scelte consapevoli}
+
+La valutazione onesta richiede di dichiarare i limiti, alcuni dei quali
+sono \emph{scelte} consapevoli, altri \emph{vincoli} da lavoro futuro:
+
+\begin{itemize}
+  \item \textbf{tropi = keyword TMDB}: tutte le keyword importate sono
+        trattate come tropi condivisibili per massimizzare la copertura del
+        recommender. Questo aumenta il richiamo ma abbassa la precisione
+        semantica: \emph{dreams} o \emph{revenge} sono descrittori pi\`u
+        deboli dei tropi narrativi canonici di TV Tropes. La classe
+        \code{ElementoDescrittivo} \`e pronta per una curation futura;
+  \item \textbf{MindBenderRule non innesca nel dataset corrente}: la regola
+        fa riferimento agli individui \code{:UnreliableNarrator} e
+        \code{:TwistEnding} del dataset curato originario; l'importazione
+        TMDB usa identificatori diversi (slug minuscoli come
+        \code{twistending}, e nessuna keyword \code{unreliablenarrator}
+        \`e presente), quindi la regola produce 0 inferenze sul catalogo
+        attuale. La regola resta corretta e testata; il mismatch \`e un
+        esempio concreto del problema di \emph{conciliazione dei termini}
+        visto a lezione: la soluzione naturale \`e una regola di
+        allineamento (per esempio una \code{owl:equivalentProperty} o un
+        mapping ETL fra slug e vocabolario curato);
+  \item \textbf{motore SWRL parziale}: supporta solo \code{ClassAtom} e
+        \code{IndividualPropertyAtom}; niente aggregazioni (per progettazione
+        delegate all'ETL) e niente atomi built-in/SQWRL;
+  \item \textbf{OWL RL e cardinalit\`a}: il profilo non implementa tutte
+        le cardinalit\`a di OWL 2 DL; il progetto compensa con controlli
+        SPARQL espliciti, accettando il costo di mantenerli separati dagli
+        assiomi;
+  \item \textbf{euristica trasparente, non appresa}: il punteggio \`e una
+        combinazione lineare di conteggi con pesi dichiarati; non c'\`e
+        apprendimento, e la qualit\`a dipende dalla copertura di keyword,
+        cast e generi su TMDB;
+  \item \textbf{scala}: la demo \`e ottimizzata per l'uso locale; un
+        triple store con endpoint SPARQL (es.\ Fuseki) e reasoner
+        distribuito sarebbero necessari per dataset di dimensione
+        superiore.
+\end{itemize}
+
+\subsection{Lavoro futuro}
+
+Le direzioni naturali di estensione sono: l'allineamento del vocabolario
+dei tropi TMDB con TV Tropes tramite \code{owl:sameAs} e
+\code{owl:equivalentProperty}; la migrazione da rdflib a un triple store
+con endpoint SPARQL per query federate \emph{reali} a runtime; il supporto
+SQWRL per aggregazioni dichiarative; l'uso della classe
+\code{Scena}/\code{annotatedWith} per annotazioni a livello di scena; e la
+validazione dell'ontologia con reasoner OWL DL completi (HermiT/Pellet)
+oltre al profilo RL.
+
+% ============================================================
+\section{Conclusioni}
+% ============================================================
+
+CineTrope dimostra che la teoria del Semantic Web --- presentata a lezione
+come stack di linguaggi sempre pi\`u espressivi --- si traduce in un
+sistema applicativo \emph{funzionante e spiegabile per costruzione}. Ogni
+concetto teorico ha un corrispettivo osservabile: le triple RDF e i named
+graph sono il formato del dataset TriG; RDFS e OWL definiscono la
+tassonomia di classi e le propriet\`a inverse, simmetriche ed equivalenti
+che il reasoner \code{owlrl} espande in 52.608 triple inferite; SWRL ---
+con il compromesso aggregazioni/ETL discusso a lezione --- produce i
+collegamenti di collaborazione frequente; SPARQL \code{SELECT} calcola le
+raccomandazioni, \code{CONSTRUCT} genera il grafo della spiegazione e
+\code{GRAPH ?source} rende verificabile la provenienza di ogni fatto; la
+query federata \code{SERVICE} arricchisce il grafo in fase ETL senza
+comprometterne la riproducibilit\`a.
+
+La lezione metodologica pi\`u importante \`e forse la complementarit\`a dei
+livelli: nessun singolo strumento basta. Le cardinalit\`a chiedono OWL, ma
+il profilo RL le copre solo in parte e servono controlli espliciti; le
+regole SWRL collegano individui, ma non contano; l'aggregazione sta in
+SPARQL; la provenienza sta nei named graph, non nella reificazione; e
+l'Open World Assumption ricorda che i controlli \emph{segnalano} senza
+\emph{correggere}. Saper orchestrare questi compromessi --- pi\`u che
+conoscere i singoli costrutti --- \`e ci\`o che il progetto ha insegnato.
+
+% ============================================================
+\begin{thebibliography}{9}
+% ============================================================
+
+\bibitem{allemang2020}
+D.~Allemang, J.~Hendler, \emph{Semantic Web for the Working Ontologist},
+3$^{\mathrm{a}}$ ed., Elsevier, 2020.
+
+\bibitem{antoniou2012}
+G.~Antoniou, P.~Groth, F.~van Harmelen, R.~Hoekstra, \emph{A Semantic Web
+Primer}, 3$^{\mathrm{a}}$ ed., MIT Press, 2012.
+
+\bibitem{rdf11}
+W3C, \emph{RDF 1.1 Concepts and Abstract Syntax}, Recommendation, 2014.
+\url{https://www.w3.org/TR/rdf11-concepts/}
+
+\bibitem{rdfs}
+W3C, \emph{RDF Schema 1.1}, W3C Recommendation, 2014.
+\url{https://www.w3.org/TR/rdf-schema/}
+
+\bibitem{owl2}
+W3C OWL Working Group, \emph{OWL 2 Web Ontology Language Document
+Overview}, 2$^{\mathrm{a}}$ ed., 2012.
+\url{https://www.w3.org/TR/owl2-overview/}
+
+\bibitem{owl2profiles}
+B.~Motik, B.~Cuenca Grau, I.~Horrocks, et al., \emph{OWL 2 Web Ontology
+Language Profiles}, W3C Recommendation, 2012.
+\url{https://www.w3.org/TR/owl2-profiles/}
+
+\bibitem{sparql11}
+W3C, \emph{SPARQL 1.1 Query Language}, Recommendation, 2013.
+\url{https://www.w3.org/TR/sparql11-query/}
+
+\bibitem{swrl}
+I.~Horrocks, P.~F.~Patel-Schneider, H.~Boley, et al., \emph{SWRL: A
+Semantic Web Rule Language Combining OWL and RuleML}, W3C Member
+Submission, 2004. \url{https://www.w3.org/Submission/SWRL/}
+
+\bibitem{studer98}
+R.~Studer, V.~R.~Benjamins, D.~Fensel, \emph{Knowledge Engineering:
+Principles and Methods}, in \emph{Data and Knowledge Engineering},
+25(1--2), 1998.
+
+\bibitem{rdflib}
+rdflib contributors, \emph{rdflib --- a Python library for working with
+RDF}. \url{https://github.com/RDFLib/rdflib}
+
+\bibitem{owlrl}
+N.~Bassiliades, et al./owl-rl contributors, \emph{OWL-RL --- a simple OWL
+RL reasoner in Python}. \url{https://github.com/RDFLib/owlrl}
+
+\end{thebibliography}
+
+\end{document}
