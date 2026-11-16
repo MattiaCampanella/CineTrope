@@ -76,10 +76,11 @@ COMPETENCY_QUESTIONS = [
     },
     {
         "id": "cq3",
-        "title": "MindBender inferiti",
-        "question": "Quali film sono classificati come MindBender dalle regole SWRL?",
-        "query": "06_mindbender.rq",
-        "note": "La classe non è asserita nei dati: viene prodotta dalla regola SWRL UnreliableNarrator + TwistEnding.",
+        "title": "Dettagli condivisi",
+        "question": "Quali proprietà condividono Inception e Il cavaliere oscuro?",
+        "query": "13_shared_details.rq",
+        "iri_params": {"seed": "TMDB27205", "rec": "TMDB49026"},
+        "note": "Confronta tropi, regista, attori e generi condivisi, indicando anche il named graph della fonte.",
     },
     {
         "id": "cq4",

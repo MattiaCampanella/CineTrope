@@ -124,7 +124,14 @@
       const edge = edges.get(edgeId);
       const otherId = edge.from === nodeId ? edge.to : edge.from;
       const other = nodes.get(otherId);
-      return (edge.label || edge.predicate) + " · " + (other ? other.label : otherId);
+      let relation = edge.label || edge.predicate;
+      if (edge.to === nodeId && (edge.predicate === "directedBy" || edge.label === "diretto da")) {
+        relation = "dirige";
+      }
+      if (edge.to === nodeId && (edge.predicate === "starring" || edge.label === "interpretato da")) {
+        relation = "recita in";
+      }
+      return relation + " · " + (other ? other.label : otherId);
     });
     info.textContent = "";
     const title = document.createElement("strong");

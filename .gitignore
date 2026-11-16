@@ -16,4 +16,4 @@ data/raw/tmdb.json
 Thumbs.db
 progetto.txt
 teoria/
-docs/
+docs/*
