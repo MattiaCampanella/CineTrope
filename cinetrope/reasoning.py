@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 
 from owlrl import DeductiveClosure, OWLRL_Semantics
-from rdflib import Dataset, Graph, OWL, RDF, RDFS
+from rdflib import OWL, RDF, Dataset, Graph
 
 from .config import CT
 from .swrl import apply_swrl, load_rule_graph
@@ -24,7 +24,12 @@ def _union_graph(dataset: Dataset) -> Graph:
 
 
 def _run_owlrl(graph: Graph) -> None:
-    DeductiveClosure(OWLRL_Semantics, rdfs_closure=True, axiomatic_triples=False, datatype_axioms=False).expand(graph)
+    DeductiveClosure(
+        OWLRL_Semantics,
+        rdfs_closure=True,
+        axiomatic_triples=False,
+        datatype_axioms=False,
+    ).expand(graph)
 
 
 def run_reasoning(dataset: Dataset) -> dict:
@@ -47,14 +52,19 @@ def run_reasoning(dataset: Dataset) -> dict:
     for triple in inferred:
         inferred_graph.add(triple)
 
-    predicate_counts = Counter(str(predicate).split("#")[-1] for _, predicate, _ in inferred)
+    predicate_counts = Counter(
+        str(predicate).split("#")[-1] for _, predicate, _ in inferred
+    )
     return {
         "inferred_triples": len(inferred),
         "swrl_inferences": swrl_stats,
         "predicates": dict(predicate_counts.most_common(12)),
         "mindbenders": len(set(dataset.subjects(RDF.type, CT.MindBender))),
         "frequent_collaborator_links": sum(
-            1 for _ in dataset.graph(CT.Inferred).triples((None, CT.hasFrequentCollaborator, None))
+            1
+            for _ in dataset.graph(CT.Inferred).triples(
+                (None, CT.hasFrequentCollaborator, None)
+            )
         ),
     }
 
@@ -74,8 +84,7 @@ def validation_checks(dataset: Dataset) -> list[dict]:
         (
             "missing_director",
             "Film senza regista",
-            prefix
-            + """
+            prefix + """
             SELECT ?film WHERE {
               ?film a :Film .
               FILTER NOT EXISTS { ?film :directedBy ?director }
@@ -85,8 +94,7 @@ def validation_checks(dataset: Dataset) -> list[dict]:
         (
             "missing_year",
             "Film senza anno di uscita",
-            prefix
-            + """
+            prefix + """
             SELECT ?film WHERE {
               ?film a :Film .
               FILTER NOT EXISTS { ?film :releaseYear ?year }
@@ -96,8 +104,7 @@ def validation_checks(dataset: Dataset) -> list[dict]:
         (
             "multiple_years",
             "Film con più anni di uscita",
-            prefix
-            + """
+            prefix + """
             SELECT ?film (COUNT(DISTINCT ?year) AS ?n) WHERE {
               ?film a :Film ; :releaseYear ?year .
             }
@@ -108,8 +115,7 @@ def validation_checks(dataset: Dataset) -> list[dict]:
         (
             "film_and_series",
             "Risorse classificate sia Film sia SerieTV",
-            prefix
-            + """
+            prefix + """
             SELECT ?work WHERE {
               ?work a :Film, :SerieTV .
             }
@@ -118,8 +124,7 @@ def validation_checks(dataset: Dataset) -> list[dict]:
         (
             "owl_nothing",
             "Individui classificati come owl:Nothing",
-            prefix
-            + """
+            prefix + """
             SELECT ?resource WHERE {
               ?resource a owl:Nothing .
             }
@@ -132,7 +137,9 @@ def validation_checks(dataset: Dataset) -> list[dict]:
         try:
             rows = list(dataset.query(query))
         except Exception as exc:  # pragma: no cover - difesa per query diagnostiche
-            results.append({"code": code, "label": label, "count": -1, "error": str(exc)})
+            results.append(
+                {"code": code, "label": label, "count": -1, "error": str(exc)}
+            )
             continue
         results.append(
             {

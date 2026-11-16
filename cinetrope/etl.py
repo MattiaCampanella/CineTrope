@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from rdflib import Dataset
 
-from .config import CATALOG_PATH, CT, GENERATED_DIR, ONTOLOGY_DIR, RAW_DIR, SOURCE_GRAPHS, TMDB_PATH
-from .queries import load_query, render_query
+from .config import (
+    CATALOG_PATH,
+    CT,
+    GENERATED_DIR,
+    ONTOLOGY_DIR,
+    RAW_DIR,
+    SOURCE_GRAPHS,
+)
+from .queries import load_query
 
 
 def slugify(value: str) -> str:
@@ -68,7 +74,9 @@ def _add_source_facts(dataset: Dataset, genres, tropes, keywords=()) -> None:
     tmdb = dataset.graph(CT.TMDB)
     for keyword in keywords:
         term = ct_iri(keyword["id"])
-        target_type = CT.Tropo if keyword["category"] == "trope" else CT.ElementoDescrittivo
+        target_type = (
+            CT.Tropo if keyword["category"] == "trope" else CT.ElementoDescrittivo
+        )
         tmdb.add((term, RDF.type, target_type))
         tmdb.add((term, RDFS.label, _literal(keyword["label"])))
 
@@ -79,7 +87,9 @@ def _literal(text: str):
     return Literal(text, lang="it")
 
 
-def _add_people(dataset: Dataset, films, people_meta, enrichment: dict | None = None) -> None:
+def _add_people(
+    dataset: Dataset, films, people_meta, enrichment: dict | None = None
+) -> None:
     from rdflib import RDF, RDFS, Literal
 
     roles: dict[str, set[str]] = {}
@@ -95,7 +105,9 @@ def _add_people(dataset: Dataset, films, people_meta, enrichment: dict | None = 
             roles.setdefault(local, set()).add("Attore")
 
     metadata_by_local = {slugify(name): data for name, data in people_meta.items()}
-    enrichment_by_local = {slugify(name): data for name, data in (enrichment or {}).items()}
+    enrichment_by_local = {
+        slugify(name): data for name, data in (enrichment or {}).items()
+    }
     catalog = dataset.graph(CT.TMDB)
     for local, name in display_names.items():
         person = ct_iri(local)
@@ -116,13 +128,19 @@ def _add_people(dataset: Dataset, films, people_meta, enrichment: dict | None = 
             source_name = metadata.get("source", "Wikidata")
             source = SOURCE_GRAPHS.get(source_name, CT.Wikidata)
             target = dataset.graph(source)
-            target.add((person, CT.birthDate, Literal(metadata["birthDate"], datatype=XSD.date)))
+            target.add(
+                (
+                    person,
+                    CT.birthDate,
+                    Literal(metadata["birthDate"], datatype=XSD.date),
+                )
+            )
             target.add((person, RDF.type, CT.Persona))
             target.add((person, RDFS.label, _literal(name)))
 
 
 def _add_films(dataset: Dataset, films) -> None:
-    from rdflib import RDF, RDFS, Literal, XSD
+    from rdflib import RDF, RDFS, XSD, Literal
 
     tmdb = dataset.graph(CT.TMDB)
     for film in films:
@@ -131,7 +149,9 @@ def _add_films(dataset: Dataset, films) -> None:
         tmdb.add((work, RDF.type, work_type))
         tmdb.add((work, RDFS.label, _literal(film["title"])))
         if film.get("year"):
-            tmdb.add((work, CT.releaseYear, Literal(str(film["year"]), datatype=XSD.gYear)))
+            tmdb.add(
+                (work, CT.releaseYear, Literal(str(film["year"]), datatype=XSD.gYear))
+            )
 
         for genre_id in film.get("genres", []):
             genre = ct_iri(normalize_genre_id(genre_id))
@@ -148,7 +168,6 @@ def _add_films(dataset: Dataset, films) -> None:
 
 def _add_derived_relations(dataset: Dataset, films) -> None:
     """Calcola co-presenze, collaborazioni e collaborazioni frequenti con SPARQL."""
-    from rdflib import Graph
 
     derived = dataset.graph(CT.Derived)
 
@@ -186,11 +205,7 @@ def build_catalog(write: bool = False) -> Dataset:
                 record["id"] = f"TMDB{record['tmdb_id']}"
                 films_by_tmdb_id[str(record["tmdb_id"])] = record
         films = list(films_by_tmdb_id.values()) + manual_series
-        keywords = [
-            keyword
-            for film in films
-            for keyword in film.get("keywords", [])
-        ]
+        keywords = [keyword for film in films for keyword in film.get("keywords", [])]
         tropes = []
     people = _read_json("people.json")
     birthdates = _read_optional_json("dbpedia_birthdates.json")

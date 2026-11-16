@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 from rdflib import Namespace
 
 BASE_DIR = Path(__file__).resolve().parent.parent

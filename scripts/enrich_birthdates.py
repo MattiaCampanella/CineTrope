@@ -75,7 +75,9 @@ def main() -> None:
     directors = sorted({name for film in films for name in film.get("directors", [])})
     enriched, missing = fetch(directors)
     if not enriched:
-        raise SystemExit("Nessuna data trovata: il file esistente non è stato modificato.")
+        raise SystemExit(
+            "Nessuna data trovata: il file esistente non è stato modificato."
+        )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

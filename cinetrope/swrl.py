@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from rdflib import Graph, RDF, Variable
+from rdflib import RDF, Graph, Variable
 from rdflib.collection import Collection
 
 from .config import ONTOLOGY_DIR, SWRL

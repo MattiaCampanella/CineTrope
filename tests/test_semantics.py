@@ -26,7 +26,7 @@ def test_catalog(store: CineTropeStore) -> None:
 
 
 def test_dbpedia_service_enrichment() -> None:
-    from rdflib import Literal, XSD
+    from rdflib import XSD, Literal
 
     dataset = build_catalog()
     expected = Literal("1970-07-30", datatype=XSD.date)

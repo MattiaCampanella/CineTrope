@@ -20,7 +20,11 @@ def _print_table(rows: list[dict], columns: list[str]) -> None:
     print(header)
     print("  ".join("-" * widths[column] for column in columns))
     for row in rows:
-        print("  ".join(str(row.get(column, "")).ljust(widths[column]) for column in columns))
+        print(
+            "  ".join(
+                str(row.get(column, "")).ljust(widths[column]) for column in columns
+            )
+        )
 
 
 def _cmd_list(store: CineTropeStore) -> None:
@@ -29,7 +33,9 @@ def _cmd_list(store: CineTropeStore) -> None:
     for film in films:
         year = film.get("year") or "----"
         directors = film.get("directors") or "regia n.d."
-        print(f"{film['title']} ({year}) · {film['film']} · {film.get('tropeCount', 0)} tropi · {directors}")
+        print(
+            f"{film['title']} ({year}) · {film['film']} · {film.get('tropeCount', 0)} tropi · {directors}"
+        )
 
 
 def _cmd_recommend(store: CineTropeStore, seed: str, limit: int, as_json: bool) -> None:
@@ -38,23 +44,41 @@ def _cmd_recommend(store: CineTropeStore, seed: str, limit: int, as_json: bool) 
         raise SystemExit(f"Film non trovato: {seed}")
     recommendations = store.recommendations(seed, limit=limit)
     if as_json:
-        print(json.dumps({"seed": film, "recommendations": recommendations}, indent=2, ensure_ascii=False))
+        print(
+            json.dumps(
+                {"seed": film, "recommendations": recommendations},
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
         return
     print(f"\n{film['title']} ({film.get('year') or '----'})")
     print(f"Regia: {', '.join(item['label'] for item in film['directors']) or 'n.d.'}")
     print(f"Tropi: {', '.join(item['label'] for item in film['tropes']) or 'n.d.'}\n")
     for index, rec in enumerate(recommendations, 1):
-        print(f"{index}. {rec['title']} ({rec.get('year') or '----'}) — {rec['score']} punti")
+        print(
+            f"{index}. {rec['title']} ({rec.get('year') or '----'}) — {rec['score']} punti"
+        )
         if rec["shared_tropes"]:
-            print(f"   Tropi: {', '.join(item['label'] for item in rec['shared_tropes'])}")
+            print(
+                f"   Tropi: {', '.join(item['label'] for item in rec['shared_tropes'])}"
+            )
         if rec["shared_directors"]:
-            print(f"   Regia: {', '.join(item['label'] for item in rec['shared_directors'])}")
+            print(
+                f"   Regia: {', '.join(item['label'] for item in rec['shared_directors'])}"
+            )
         if rec["shared_actors"]:
-            print(f"   Cast: {', '.join(item['label'] for item in rec['shared_actors'][:5])}")
+            print(
+                f"   Cast: {', '.join(item['label'] for item in rec['shared_actors'][:5])}"
+            )
         if rec["shared_genres"]:
-            print(f"   Generi: {', '.join(item['label'] for item in rec['shared_genres'])}")
+            print(
+                f"   Generi: {', '.join(item['label'] for item in rec['shared_genres'])}"
+            )
         if rec["source_summary"]:
-            sources = ", ".join(f"{name} ({count})" for name, count in rec["source_summary"].items())
+            sources = ", ".join(
+                f"{name} ({count})" for name, count in rec["source_summary"].items()
+            )
             print(f"   Fonti: {sources}")
         print(f"   Grafo: /explanation/{seed}/{rec['id']}")
 
@@ -67,7 +91,9 @@ def _cmd_explain(store: CineTropeStore, seed: str, rec: str, as_json: bool) -> N
         print(json.dumps(explanation, indent=2, ensure_ascii=False))
         return
     print(f"\n{seed} -> {rec}")
-    print(f"{explanation['node_count']} nodi, {explanation['edge_count']} archi, {explanation['triple_count']} triple")
+    print(
+        f"{explanation['node_count']} nodi, {explanation['edge_count']} archi, {explanation['triple_count']} triple"
+    )
     if explanation["recommendation_is_mindbender"]:
         print("La raccomandazione è un MindBender inferito dalle regole SWRL.")
     print("\nArchi:")
@@ -84,7 +110,9 @@ def _cmd_cq(store: CineTropeStore, cq_id: str | None, as_json: bool) -> None:
         questions = [cq for cq in questions if cq["id"].lower() == cq_id.lower()]
         if not questions:
             available = ", ".join(cq["id"] for cq in COMPETENCY_QUESTIONS)
-            raise SystemExit(f"Competency question sconosciuta: {cq_id}. Disponibili: {available}")
+            raise SystemExit(
+                f"Competency question sconosciuta: {cq_id}. Disponibili: {available}"
+            )
     if as_json:
         print(json.dumps(questions, indent=2, ensure_ascii=False))
         return
@@ -102,7 +130,19 @@ def _cmd_stats(store: CineTropeStore, as_json: bool) -> None:
     if as_json:
         print(json.dumps(stats, indent=2, ensure_ascii=False))
         return
-    for key in ("films", "series", "people", "tropes", "genres", "sources", "triples", "named_graphs", "inferred_triples", "mindbenders", "frequent_collaborator_pairs"):
+    for key in (
+        "films",
+        "series",
+        "people",
+        "tropes",
+        "genres",
+        "sources",
+        "triples",
+        "named_graphs",
+        "inferred_triples",
+        "mindbenders",
+        "frequent_collaborator_pairs",
+    ):
         print(f"{key}: {stats.get(key)}")
 
 
@@ -111,26 +151,44 @@ def build_parser() -> argparse.ArgumentParser:
         prog="cinetrope",
         description="CineTrope: recommender semantico spiegabile per film.",
     )
-    parser.add_argument("--rebuild", action="store_true", help="Ricostruisce il triple store prima del comando.")
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="Ricostruisce il triple store prima del comando.",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("build", help="Costruisce ETL, inferenze e report di validazione.")
+    subparsers.add_parser(
+        "build", help="Costruisce ETL, inferenze e report di validazione."
+    )
     subparsers.add_parser("list", help="Elenca i film del catalogo.")
-    stats = subparsers.add_parser("stats", help="Mostra le statistiche del knowledge graph.")
+    stats = subparsers.add_parser(
+        "stats", help="Mostra le statistiche del knowledge graph."
+    )
     stats.add_argument("--json", action="store_true", help="Output JSON.")
 
-    recommend = subparsers.add_parser("recommend", help="Mostra cinque raccomandazioni per un film.")
+    recommend = subparsers.add_parser(
+        "recommend", help="Mostra cinque raccomandazioni per un film."
+    )
     recommend.add_argument("seed", help="ID locale del film, ad esempio Inception.")
-    recommend.add_argument("--limit", type=int, default=5, help="Numero di raccomandazioni (default 5).")
+    recommend.add_argument(
+        "--limit", type=int, default=5, help="Numero di raccomandazioni (default 5)."
+    )
     recommend.add_argument("--json", action="store_true", help="Output JSON.")
 
-    explain = subparsers.add_parser("explain", help="Mostra il grafo di spiegazione tra due film.")
+    explain = subparsers.add_parser(
+        "explain", help="Mostra il grafo di spiegazione tra due film."
+    )
     explain.add_argument("seed", help="ID del film di partenza.")
     explain.add_argument("rec", help="ID del film raccomandato.")
     explain.add_argument("--json", action="store_true", help="Output JSON.")
 
-    cq = subparsers.add_parser("cq", help="Esegue tutte le competency questions o una sola.")
-    cq.add_argument("cq_id", nargs="?", help="ID della competency question, ad esempio cq1.")
+    cq = subparsers.add_parser(
+        "cq", help="Esegue tutte le competency questions o una sola."
+    )
+    cq.add_argument(
+        "cq_id", nargs="?", help="ID della competency question, ad esempio cq1."
+    )
     cq.add_argument("--json", action="store_true", help="Output JSON.")
     return parser
 

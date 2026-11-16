@@ -22,12 +22,20 @@ def to_iri(value: Any) -> URIRef:
     if isinstance(value, URIRef):
         return value
     text = str(value)
-    if text.startswith("http://") or text.startswith("https://") or text.startswith("urn:"):
+    if (
+        text.startswith("http://")
+        or text.startswith("https://")
+        or text.startswith("urn:")
+    ):
         return URIRef(text)
     return CT[text]
 
 
-def render_query(text: str, iri_params: dict[str, Any] | None = None, raw_params: dict[str, Any] | None = None) -> str:
+def render_query(
+    text: str,
+    iri_params: dict[str, Any] | None = None,
+    raw_params: dict[str, Any] | None = None,
+) -> str:
     rendered = text
     for key, value in (iri_params or {}).items():
         iri = str(to_iri(value))
@@ -41,7 +49,11 @@ def render_query(text: str, iri_params: dict[str, Any] | None = None, raw_params
     return rendered
 
 
-def render_named_query(name: str, iri_params: dict[str, Any] | None = None, raw_params: dict[str, Any] | None = None) -> str:
+def render_named_query(
+    name: str,
+    iri_params: dict[str, Any] | None = None,
+    raw_params: dict[str, Any] | None = None,
+) -> str:
     return render_query(load_query(name), iri_params=iri_params, raw_params=raw_params)
 
 

@@ -8,14 +8,14 @@
   }
 
   const palette = {
-    seed: { background: "#f5c451", border: "#fff1c9", font: "#1a1406" },
-    recommendation: { background: "#e35d5d", border: "#ffd1d1", font: "#1c0808" },
-    trope: { background: "#a78bfa", border: "#e4dbff", font: "#140b2b" },
-    person: { background: "#4fd1c5", border: "#c8fff8", font: "#04201d" },
-    genre: { background: "#f59e0b", border: "#ffe6b3", font: "#241604" },
-    source: { background: "#64748b", border: "#d4dce7", font: "#f8fafc" },
-    film: { background: "#60a5fa", border: "#d7e9ff", font: "#071b33" },
-    other: { background: "#94a3b8", border: "#e2e8f0", font: "#0f172a" }
+    seed: { background: "#eceae4", border: "#eceae4", font: "#15181e" },
+    recommendation: { background: "#f08a4b", border: "#f08a4b", font: "#1a0e05" },
+    trope: { background: "#12302d", border: "#4fc3b8", font: "#bdeee9" },
+    person: { background: "#1a2640", border: "#7aa2f0", font: "#c9d9fa" },
+    genre: { background: "#38300f", border: "#e0b04a", font: "#f3dca0" },
+    source: { background: "#1e2229", border: "#868b95", font: "#aeb2ba" },
+    film: { background: "#16191e", border: "#eceae4", font: "#eceae4" },
+    other: { background: "#1e2229", border: "#868b95", font: "#aeb2ba" }
   };
 
   const shapes = {
@@ -53,12 +53,12 @@
         color: {
           background: colors.background,
           border: colors.border,
-          highlight: { background: colors.border, border: "#ffffff" },
-          hover: { background: colors.border, border: "#ffffff" }
+          highlight: { background: colors.background, border: "#ffffff" },
+          hover: { background: colors.background, border: "#ffffff" }
         },
         font: {
           color: colors.font,
-          face: "Inter, Segoe UI, sans-serif",
+          face: "Geist, Segoe UI, sans-serif",
           size: group === "seed" || group === "recommendation" ? 16 : 13,
           strokeWidth: 0
         },
@@ -75,15 +75,15 @@
         to: edge.to,
         label: edge.label,
         arrows: { to: { enabled: true, scaleFactor: 0.65 } },
-        color: { color: "rgba(203, 213, 225, 0.42)", highlight: "#f5c451", hover: "#f5c451" },
+        color: { color: "#3a3f49", highlight: "#f08a4b", hover: "#f08a4b" },
         font: {
-          color: "#cbd5e1",
+          color: "#aeb2ba",
           size: 11,
-          face: "Inter, Segoe UI, sans-serif",
-          background: "rgba(9, 11, 17, 0.82)",
+          face: "Geist, Segoe UI, sans-serif",
+          background: "#0e1013",
           strokeWidth: 0
         },
-        smooth: { enabled: true, type: "dynamic" },
+        smooth: { enabled: true, type: "continuous" },
         width: 1.2
       };
     })
@@ -105,10 +105,10 @@
           damping: 0.2,
           avoidOverlap: 0.25
         },
-        stabilization: { iterations: 260, updateInterval: 30 }
+        stabilization: { iterations: 120, updateInterval: 40 }
       },
       edges: { selectionWidth: 1.8 },
-      nodes: { borderWidth: 2, shadow: { enabled: true, color: "rgba(245, 196, 81, 0.2)", size: 12 } }
+      nodes: { borderWidth: 1.5, shadow: false }
     }
   );
 

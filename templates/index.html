@@ -3,29 +3,26 @@
 {% block content %}
 <section class="hero">
   <div class="hero-copy">
-    <h1>Semantic movie recommender</h1>
+    <h1>Scopri perché due film si somigliano</h1>
     <p class="lede">
-      Scegli un film e osserva perché CineTrope lo consiglia: tropi condivisi,
-      regia, cast, generi e la fonte di ogni informazione. Ogni spiegazione è
-      un grafo RDF prodotto con una query <code>CONSTRUCT</code>.
+      Scegli un film: CineTrope ne propone cinque e mostra il percorso che li
+      collega, fatto di tropi, regia, cast, generi e della fonte di ogni dato.
     </p>
     <form class="film-picker" id="film-picker" action="/" method="get">
-      <label for="film-select">Scegli un film di partenza dal catalogo TMDB</label>
+      <label for="film-input">Film di partenza</label>
       <div class="picker-row">
-        <select id="film-select" name="film" aria-label="Film di partenza">
-          <option value="">Seleziona un film…</option>
+        <input id="film-input" name="q" type="search" list="film-options" autocomplete="off"
+               placeholder="Cerca per titolo, ad esempio Inception" aria-describedby="picker-error">
+        <datalist id="film-options">
           {% for film in films %}
-          <option value="{{ film.film }}" data-year="{{ film.year or '' }}">
-            {{ film.title }}{% if film.year %} ({{ film.year }}){% endif %}
-          </option>
+          <option value="{{ film.title }}{% if film.year %} ({{ film.year }}){% endif %}" data-id="{{ film.film }}"></option>
           {% endfor %}
-        </select>
-        <button class="button button-primary" type="submit">Genera raccomandazioni</button>
+        </datalist>
+        <button class="button button-primary" type="submit">Mostra i film simili</button>
       </div>
+      <p class="picker-error" id="picker-error" role="alert"></p>
     </form>
-    <p class="hero-note">
-      Il catalogo è materializzato localmente: la demo non dipende da endpoint pubblici.
-    </p>
+    <p class="hero-note">Catalogo locale: nessuna chiamata a servizi esterni durante la consultazione.</p>
   </div>
   <div class="hero-panel" aria-label="Statistiche del knowledge graph">
     <p class="panel-kicker">Knowledge graph</p>
@@ -57,10 +54,9 @@
 <section class="section">
   <div class="section-head">
     <div>
-      <p class="eyebrow">Percorsi consigliati</p>
+      <p class="eyebrow">Esempi</p>
       <h2>Da dove iniziare</h2>
     </div>
-    <p class="section-note">Sei film con profili semantici molto diversi tra loro.</p>
   </div>
   <div class="feature-grid">
     {% for film in featured %}
@@ -83,8 +79,7 @@
     <p class="eyebrow">Come funziona</p>
     <h2>Osserva le relazioni</h2>
     <p class="section-note">
-      Il punteggio combina quattro dimensioni: tropi (3 punti ciascuno,
-      regista (2), attori (2) e generi (5). La spiegazione non è un testo
+      Il punteggio combina quattro dimensioni: tropi (3 punti ciascuno), regista (2), attori (2) e generi (5). La spiegazione non è un testo
       generato a posteriori: è il grafo RDF che collega i due film.
     </p>
     <a class="text-link" href="/queries">Guarda le competency questions →</a>

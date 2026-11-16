@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import threading
+from contextlib import asynccontextmanager
 from functools import lru_cache
 from typing import Any
 
@@ -11,7 +13,32 @@ from fastapi.templating import Jinja2Templates
 from .config import SOURCE_LABELS, STATIC_DIR, TEMPLATE_DIR
 from .store import CineTropeStore
 
+
+@lru_cache(maxsize=1)
+def get_store() -> CineTropeStore:
+    return CineTropeStore.load_or_build()
+
+
+def _warm_up() -> None:
+    # Le query SPARQL su rdflib sono lente (secondi): le eseguo una volta sola all'avvio.
+    store = get_store()
+    for call in (
+        store.films,
+        store.stats,
+        store.source_stats,
+        store.competency_questions,
+    ):
+        call()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    threading.Thread(target=_warm_up, daemon=True).start()
+    yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="CineTrope",
     description="Recommender semantico spiegabile basato su tropi narrativi, OWL, SWRL e named graph.",
     version="1.0.0",
@@ -38,12 +65,9 @@ templates.env.filters["source_label"] = _source_label
 templates.env.filters["number"] = _number
 
 
-@lru_cache(maxsize=1)
-def get_store() -> CineTropeStore:
-    return CineTropeStore.load_or_build()
-
-
-def render(request: Request, name: str, context: dict, status_code: int = 200) -> HTMLResponse:
+def render(
+    request: Request, name: str, context: dict, status_code: int = 200
+) -> HTMLResponse:
     return templates.TemplateResponse(
         request=request,
         name=name,
@@ -59,8 +83,12 @@ def home(request: Request, film: str | None = None) -> Response:
     store = get_store()
     films = store.films()
     stats = store.stats()
-    featured_titles = {"Inception", "The Matrix", "Parasite", "Spirited Away", "The Shining", "Pulp Fiction"}
-    featured = [film for film in films if film["title"] in featured_titles][:6]
+    featured_titles = {
+        "Inception",
+        "Matrix",
+        "Parasite",
+    }
+    featured = [film for film in films if film["title"] in featured_titles][:3]
     return render(
         request,
         "index.html",
@@ -108,7 +136,6 @@ def recommendations_page(
             "active": "home",
             "film": film,
             "recommendations": recommendations,
-            "all_films": store.films(),
             "priority": priority,
             "priorities": priorities,
             "priority_weights": priority_weights[priority],
@@ -180,7 +207,9 @@ def api_recommendations(seed_id: str, limit: int = 5) -> JSONResponse:
     if film is None:
         raise HTTPException(status_code=404, detail=f"Film non trovato: {seed_id}")
     limit = max(1, min(limit, 10))
-    return JSONResponse({"seed": film, "recommendations": store.recommendations(seed_id, limit)})
+    return JSONResponse(
+        {"seed": film, "recommendations": store.recommendations(seed_id, limit)}
+    )
 
 
 @app.get("/api/explanation/{seed_id}/{rec_id}")

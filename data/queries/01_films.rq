@@ -3,7 +3,7 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 # Catalogo dei film con registi, generi e numero di tropi.
 SELECT ?film ?title ?year
-       (GROUP_CONCAT(DISTINCT ?directorName; separator = ", ") AS ?directors)
+       (GROUP_CONCAT(DISTINCT COALESCE(?directorName, ""); separator = ", ") AS ?directors)
        (GROUP_CONCAT(DISTINCT COALESCE(?genreLabel, ""); separator = ", ") AS ?genres)
        (COUNT(DISTINCT ?trope) AS ?tropeCount)
 WHERE {

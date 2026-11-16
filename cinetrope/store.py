@@ -3,25 +3,29 @@
 from __future__ import annotations
 
 import json
-from collections import Counter, defaultdict
+from collections import Counter
+from functools import lru_cache
 
-from rdflib import Graph, Literal, RDF, RDFS, URIRef, Dataset
+from rdflib import RDF, RDFS, Dataset, Graph, Literal, URIRef
+from tqdm import tqdm
 
 from .config import (
-    CATALOG_PATH,
     CT,
     GENERATED_DIR,
     REPORT_PATH,
-    SOURCE_GRAPHS,
-    SOURCE_LABELS,
     STORE_PATH,
 )
 from .etl import build_catalog, dataset_stats
-from .queries import COMPETENCY_QUESTIONS, load_query, render_named_query, render_query
+from .queries import COMPETENCY_QUESTIONS, render_named_query, render_query
 from .reasoning import run_reasoning, validation_checks
 
 GROUPS = ("tropes", "directors", "actors", "genres")
-KIND_TO_GROUP = {"trope": "tropes", "director": "directors", "actor": "actors", "genre": "genres"}
+KIND_TO_GROUP = {
+    "trope": "tropes",
+    "director": "directors",
+    "actor": "actors",
+    "genre": "genres",
+}
 
 EDGE_LABELS = {
     CT.recommends: "raccomanda",
@@ -34,14 +38,20 @@ EDGE_LABELS = {
     CT.assertedIn: "fonte",
 }
 
-SKIP_PREDICATES = {RDF.type, CT.sharesTropeWith, CT.sharesDirectorWith, CT.sharesActorWith, CT.sharesGenreWith}
+SKIP_PREDICATES = {
+    RDF.type,
+    CT.sharesTropeWith,
+    CT.sharesDirectorWith,
+    CT.sharesActorWith,
+    CT.sharesGenreWith,
+}
 
 
 def local_name(term) -> str:
     text = str(term)
     namespace = str(CT)
     if text.startswith(namespace):
-        return text[len(namespace):]
+        return text[len(namespace) :]
     return text
 
 
@@ -49,7 +59,9 @@ def _json_value(term):
     if term is None:
         return None
     if isinstance(term, Literal):
-        return term.value if term.datatype is None and term.language is None else str(term)
+        return (
+            term.value if term.datatype is None and term.language is None else str(term)
+        )
     if isinstance(term, URIRef):
         return local_name(term)
     return str(term)
@@ -80,16 +92,25 @@ class CineTropeStore:
     @classmethod
     def rebuild(cls) -> "CineTropeStore":
         GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+        steps = tqdm(total=3, desc="ETL", unit="fase")
         dataset = build_catalog(write=True)
+        steps.update()
+        steps.set_description("Inferenza OWL RL + SWRL")
         reasoning_report = run_reasoning(dataset)
+        steps.update()
+        steps.set_description("Validazione")
         checks = validation_checks(dataset)
+        steps.update()
+        steps.close()
         report = {
             "reasoning": reasoning_report,
             "validation": checks,
             "stats": dataset_stats(dataset),
         }
         dataset.serialize(destination=STORE_PATH, format="trig")
-        REPORT_PATH.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+        REPORT_PATH.write_text(
+            json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         return cls(dataset)
 
     def build_report(self) -> dict:
@@ -101,18 +122,29 @@ class CineTropeStore:
     # Query helpers
     # ------------------------------------------------------------------
     def _execute(self, query_name: str, iri_params=None, raw_params=None):
-        query = render_named_query(query_name, iri_params=iri_params, raw_params=raw_params)
+        query = render_named_query(
+            query_name, iri_params=iri_params, raw_params=raw_params
+        )
         return self.dataset.query(query)
 
     def _dict_rows(self, result) -> list[dict]:
         columns = [str(variable) for variable in (result.vars or [])]
         rows = []
         for row in result:
-            rows.append({column: _json_value(row[index]) for index, column in enumerate(columns)})
+            rows.append(
+                {
+                    column: _json_value(row[index])
+                    for index, column in enumerate(columns)
+                }
+            )
         return rows
 
-    def query_rows(self, query_name: str, iri_params=None, raw_params=None) -> list[dict]:
-        return self._dict_rows(self._execute(query_name, iri_params=iri_params, raw_params=raw_params))
+    def query_rows(
+        self, query_name: str, iri_params=None, raw_params=None
+    ) -> list[dict]:
+        return self._dict_rows(
+            self._execute(query_name, iri_params=iri_params, raw_params=raw_params)
+        )
 
     def _label(self, node) -> str:
         labels = sorted(self.dataset.objects(node, RDFS.label), key=str)
@@ -126,9 +158,11 @@ class CineTropeStore:
     # ------------------------------------------------------------------
     # Catalogo e dettaglio film
     # ------------------------------------------------------------------
+    @lru_cache(maxsize=1024)
     def films(self) -> list[dict]:
         return self.query_rows("01_films.rq")
 
+    @lru_cache(maxsize=1024)
     def film(self, film_id: str) -> dict | None:
         iri = CT[film_id]
         if not (
@@ -140,12 +174,24 @@ class CineTropeStore:
         title = self._label(iri)
         year = next(self.dataset.objects(iri, CT.releaseYear), None)
         work_type = "SerieTV" if self._exists(iri, RDF.type, CT.SerieTV) else "Film"
-        directors = [{"id": local_name(value), "label": self._label(value)} for value in self.dataset.objects(iri, CT.directedBy)]
-        actors = [{"id": local_name(value), "label": self._label(value)} for value in self.dataset.objects(iri, CT.starring)]
-        genres = [{"id": local_name(value), "label": self._label(value)} for value in self.dataset.objects(iri, CT.hasGenre)]
+        directors = [
+            {"id": local_name(value), "label": self._label(value)}
+            for value in self.dataset.objects(iri, CT.directedBy)
+        ]
+        actors = [
+            {"id": local_name(value), "label": self._label(value)}
+            for value in self.dataset.objects(iri, CT.starring)
+        ]
+        genres = [
+            {"id": local_name(value), "label": self._label(value)}
+            for value in self.dataset.objects(iri, CT.hasGenre)
+        ]
 
         tropes = []
-        for trope in sorted(set(self.dataset.objects(iri, CT.hasTrope)), key=lambda node: self._label(node)):
+        for trope in sorted(
+            set(self.dataset.objects(iri, CT.hasTrope)),
+            key=lambda node: self._label(node),
+        ):
             tropes.append(
                 {
                     "id": local_name(trope),
@@ -155,7 +201,10 @@ class CineTropeStore:
             )
 
         elements = []
-        for element in sorted(set(self.dataset.objects(iri, CT.hasElement)), key=lambda node: self._label(node)):
+        for element in sorted(
+            set(self.dataset.objects(iri, CT.hasElement)),
+            key=lambda node: self._label(node),
+        ):
             elements.append(
                 {
                     "id": local_name(element),
@@ -181,6 +230,7 @@ class CineTropeStore:
     # ------------------------------------------------------------------
     # Provenienza
     # ------------------------------------------------------------------
+    @lru_cache(maxsize=1024)
     def sources_for(self, subject, predicate, obj) -> list[dict]:
         query = render_query(
             """
@@ -197,8 +247,15 @@ class CineTropeStore:
         query = query.replace("{{PREDICATE}}", f"<{predicate}>")
         query = query.replace("{{OBJECT}}", f"<{obj}>")
         rows = self._dict_rows(self.dataset.query(query))
-        return _dedupe([{"id": row["source"], "label": row["label"]} for row in rows if row.get("source")])
+        return _dedupe(
+            [
+                {"id": row["source"], "label": row["label"]}
+                for row in rows
+                if row.get("source")
+            ]
+        )
 
+    @lru_cache(maxsize=1024)
     def provenance(self, film_id: str, trope_id: str) -> list[dict]:
         rows = self.query_rows(
             "05_provenance_assertion.rq",
@@ -214,12 +271,14 @@ class CineTropeStore:
             for row in rows
         ]
 
+    @lru_cache(maxsize=1024)
     def source_stats(self) -> list[dict]:
         return self.query_rows("08_source_stats.rq")
 
     # ------------------------------------------------------------------
     # Raccomandazioni e spiegazioni
     # ------------------------------------------------------------------
+    @lru_cache(maxsize=1024)
     def shared_details(self, seed_id: str, rec_id: str) -> dict:
         rows = self.query_rows(
             "13_shared_details.rq",
@@ -245,7 +304,9 @@ class CineTropeStore:
         result = {}
         for group in GROUPS:
             items = []
-            for item in sorted(grouped[group].values(), key=lambda entry: entry["label"]):
+            for item in sorted(
+                grouped[group].values(), key=lambda entry: entry["label"]
+            ):
                 items.append(
                     {
                         "id": item["id"],
@@ -257,7 +318,10 @@ class CineTropeStore:
         result["source_summary"] = dict(source_counter.most_common())
         return result
 
-    def recommendations(self, seed_id: str, limit: int = 5, priority: str = "balanced") -> list[dict]:
+    @lru_cache(maxsize=1024)
+    def recommendations(
+        self, seed_id: str, limit: int = 5, priority: str = "balanced"
+    ) -> list[dict]:
         weights = {
             "balanced": (3, 2, 2, 5),
             "cast": (3, 2, 6, 3),
@@ -265,7 +329,9 @@ class CineTropeStore:
             "tropes": (6, 2, 2, 3),
             "genres": (3, 2, 2, 8),
         }
-        trope_weight, director_weight, actor_weight, genre_weight = weights.get(priority, weights["balanced"])
+        trope_weight, director_weight, actor_weight, genre_weight = weights.get(
+            priority, weights["balanced"]
+        )
         rows = self.query_rows(
             "03_recommendations.rq",
             iri_params={"seed": seed_id},
@@ -302,6 +368,7 @@ class CineTropeStore:
             )
         return recommendations
 
+    @lru_cache(maxsize=1024)
     def explanation(self, seed_id: str, rec_id: str) -> dict:
         result = self._execute(
             "04_explanation_construct.rq",
@@ -378,7 +445,9 @@ class CineTropeStore:
             "edge_count": len(edges),
             "triple_count": len(triples),
             "seed_is_mindbender": self._exists(seed_iri, RDF.type, CT.MindBender),
-            "recommendation_is_mindbender": self._exists(rec_iri, RDF.type, CT.MindBender),
+            "recommendation_is_mindbender": self._exists(
+                rec_iri, RDF.type, CT.MindBender
+            ),
         }
 
     def _node_group(self, node, seed_iri, rec_iri) -> str:
@@ -386,7 +455,11 @@ class CineTropeStore:
             return "seed"
         if node == rec_iri:
             return "recommendation"
-        types = set(self.dataset.objects(node, RDF.type)) if isinstance(node, URIRef) else set()
+        types = (
+            set(self.dataset.objects(node, RDF.type))
+            if isinstance(node, URIRef)
+            else set()
+        )
         if CT.Fonte in types:
             return "source"
         if CT.Tropo in types:
@@ -428,9 +501,11 @@ class CineTropeStore:
                 "error": str(exc),
             }
 
+    @lru_cache(maxsize=1024)
     def competency_questions(self) -> list[dict]:
         return [self.competency_question(cq) for cq in COMPETENCY_QUESTIONS]
 
+    @lru_cache(maxsize=1024)
     def stats(self) -> dict:
         base = dataset_stats(self.dataset)
         inferred = self.dataset.graph(CT.Inferred)
@@ -448,12 +523,15 @@ class CineTropeStore:
             "build_report": self.build_report(),
         }
 
+    @lru_cache(maxsize=1024)
     def mindbenders(self) -> list[dict]:
         return self.query_rows("06_mindbender.rq")
 
+    @lru_cache(maxsize=1024)
     def frequent_collaborators(self) -> list[dict]:
         return self.query_rows("07_frequent_collaborators.rq")
 
+    @lru_cache(maxsize=1024)
     def genre_hierarchy(self) -> list[dict]:
         return self.query_rows("09_genre_hierarchy.rq")
 

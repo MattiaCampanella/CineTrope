@@ -13,6 +13,7 @@ from .etl import slugify
 
 TMDB_API = "https://api.themoviedb.org/3"
 
+
 def classify_keyword(keyword: dict) -> dict:
     name = str(keyword["name"]).strip()
     try:
@@ -59,7 +60,9 @@ def _film_record(details: dict, credits: dict, keywords: dict) -> dict:
 
 
 def fetch_movie(title: str, api_key: str, language: str = "it-IT") -> dict:
-    results = _request("/search/movie", api_key, query=title, language=language)["results"]
+    results = _request("/search/movie", api_key, query=title, language=language)[
+        "results"
+    ]
     if not results:
         raise ValueError(f"TMDB non ha trovato il film {title!r}")
     movie_id = results[0]["id"]
@@ -92,7 +95,9 @@ def fetch_discover(
 
 
 def write_records(path: Path, records: list[dict]) -> None:
-    path.write_text(json.dumps(records, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(records, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def require_api_key() -> str:
@@ -106,5 +111,7 @@ def require_api_key() -> str:
                     api_key = value.strip().strip("\"'")
                     break
     if not api_key:
-        raise RuntimeError("Configura TMDB_API_KEY nel file .env o come variabile d'ambiente.")
+        raise RuntimeError(
+            "Configura TMDB_API_KEY nel file .env o come variabile d'ambiente."
+        )
     return api_key
