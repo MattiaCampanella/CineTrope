@@ -1,0 +1,6 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# Datatype restriction: voteAverage >= 7.5 (vuota finché non si reimporta TMDB).
+CONSTRUCT { ?f a :AcclaimedFilm }
+WHERE { ?f a :Film ; :voteAverage ?v . FILTER (?v >= 7.5) }

@@ -202,7 +202,7 @@ specificazione del progetto, sono i seguenti:
         SPARQL commentate, coprendo aggregazioni (\code{GROUP BY}/\code{HAVING}),
         costruzione di grafi (\code{CONSTRUCT}) e provenienza
         (\code{GRAPH ?source});
-  \item fornire una \textbf{demo web} (FastAPI, Jinja2, vis.js) e una
+  \item fornire una \textbf{demo web} (FastAPI per l'API, Next.js/React e vis-network per il sito) e una
         \textbf{CLI} che espongano catalogo, raccomandazioni, spiegazioni,
         provenienza e statistiche, senza dipendere da endpoint pubblici a
         runtime.
@@ -667,8 +667,8 @@ tabella~\ref{tab:moduli} i componenti software.
 \node[proc, right=of ds] (derive) {CONSTRUCT derivati\\co-star, collaborazioni};
 \node[proc, below=of ds] (owlrl) {OWL RL (owlrl)\\+ SWRL custom};
 \node[store, below=of owlrl] (trig) {store.trig\\+ build\_report.json};
-\node[app, below=of derive] (api) {FastAPI + Jinja2\\API JSON};
-\node[app, below=of api] (ui) {vis.js / CLI\\UI web};
+\node[app, below=of derive] (api) {FastAPI\\API JSON};
+\node[app, below=of api] (ui) {Next.js + vis-network / CLI\\UI web};
 
 \draw[arr] (raw) -- (etl);
 \draw[arr] (ont) -- (ds);
@@ -697,12 +697,12 @@ tabella~\ref{tab:moduli} i componenti software.
 \code{cinetrope/swrl.py} & parser ed esecuzione delle regole SWRL \\
 \code{cinetrope/queries.py} & caricamento, rendering e competency questions \\
 \code{cinetrope/store.py} & API applicativa: catalogo, raccomandazioni, spiegazioni, provenienza \\
-\code{cinetrope/web.py} & rotte FastAPI e template \\
+\code{cinetrope/web.py} & rotte JSON FastAPI \\
+\code{cinetrope/search.py} & query builder con filtri e autosuggest \\
+\code{web/} & sito Next.js 15 / React 19 (poster, ricerca, grafo vis-network) \\
 \code{cinetrope/cli.py} & interfaccia da terminale \\
 \code{cinetrope/tmdb.py} & client TMDB e importazione keyword/cast \\
-\code{scripts/import\_tmdb.py} & importazione e aggiornamento del catalogo TMDB \\
-\code{scripts/enrich\_birthdates.py} & arricchimento federato da DBpedia \\
-\code{scripts/build\_store.py} & build completo: ETL + reasoner + validazione \\
+\code{scripts/pipeline.py} & entry point unico: fetch TMDB e DBpedia, validazione TBox, ETL, reasoner e build dello store \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1116,9 +1116,9 @@ dall'indisponibilit\`a degli endpoint pubblici.
 
 \subsection{Stack applicativo}
 
-Il back-end \`e un'applicazione FastAPI con template Jinja2; il front-end
-usa vis.js per il grafo interattivo della spiegazione. Al primo avvio la
-web app costruisce automaticamente lo store se
+Il back-end \`e un'applicazione FastAPI che espone solo JSON; il sito \`e in Next.js
+(React, TypeScript) e usa vis-network per il grafo interattivo della spiegazione.
+Al primo avvio il back-end costruisce automaticamente lo store se
 \code{data/generated/store.trig} non esiste (ETL + reasoner + validazione
 + scrittura del report). Le rotte principali sono in
 tabella~\ref{tab:rotte}.
@@ -1132,13 +1132,15 @@ tabella~\ref{tab:rotte}.
 \toprule
 \textbf{Rotta} & \textbf{Descrizione} \\
 \midrule
-\code{/} & catalogo, statistiche del grafo, selezione del film \\
-\code{/recommendations/\{film\}} & cinque raccomandazioni motivate con
-preset di priorit\`a (\code{?priority=cast|director|tropes|genres}) \\
-\code{/explanation/\{seed\}/\{rec\}} & grafo interattivo della spiegazione
-(vis.js) con triple e serializzazione Turtle \\
-\code{/queries} & competency questions con risultati e testo della query \\
-\code{/sources} & statistiche e ruolo dei named graph \\
+\multicolumn{2}{@{}p{14cm}@{}}{Pagine del sito (Next.js, porta 3000): \code{/} (home), \code{/film/\{id\}} (cinque raccomandazioni con
+preset di priorit\`a), \code{/explain/\{seed\}/\{rec\}} (connessioni e grafo vis-network),
+\code{/search}, \code{/queries}, \code{/sources}. Rotte JSON del back-end (porta 8000):} \\\midrule
+\code{/api/home} & hero, rail tematici e statistiche \\
+\code{/api/film/\{id\}} & scheda film e Top 5 con preset (\code{?priority=}) \\
+\code{/api/search}, \code{/api/suggest} & ricerca con filtri e autosuggest \\
+\code{/api/relation/\{a\}/\{b\}} & legami derivati (property chain, SWRL) \\
+\code{/api/queries}, \code{/api/queries/\{cq\}} & competency questions: elenco ed esecuzione singola \\
+\code{/api/sources} & named graph e triple per fonte \\
 \code{/health} & stato sintetico del servizio \\
 \code{/api/films} & catalogo in JSON \\
 \code{/api/recommendations/\{seed\}} & raccomandazioni in JSON \\

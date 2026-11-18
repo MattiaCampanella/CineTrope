@@ -1,0 +1,98 @@
+@prefix : <http://example.org/cinetrope#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.org/cinetrope/schema/data-properties> a owl:Ontology ;
+    rdfs:label "CineTrope - proprietà dati"@it , "CineTrope - data properties"@en ;
+    owl:versionInfo "2.0.0" .
+
+:name a owl:DatatypeProperty ;
+    rdfs:label "nome"@it , "name"@en ;
+    rdfs:comment "Super-proprietà di titoli e nomi di persona."@it , "Super-property of titles and person names."@en .
+
+:title a owl:DatatypeProperty ;
+    rdfs:subPropertyOf :name ; rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:string ;
+    rdfs:label "titolo"@it , "title"@en .
+
+:personName a owl:DatatypeProperty ;
+    rdfs:subPropertyOf :name ; rdfs:domain :Persona ; rdfs:range xsd:string ;
+    rdfs:label "nome della persona"@it , "person name"@en .
+
+:releaseYear a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:gYear ;
+    rdfs:label "anno di uscita"@it , "release year"@en .
+
+:releaseDate a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:date ;
+    rdfs:label "data di uscita"@it , "release date"@en .
+
+:runtime a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:integer ;
+    rdfs:label "durata (minuti)"@it , "runtime (minutes)"@en .
+
+:voteAverage a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:decimal ;
+    rdfs:label "voto medio"@it , "average vote"@en .
+
+:voteCount a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:integer ;
+    rdfs:label "numero di voti"@it , "vote count"@en .
+
+:budget a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:integer ;
+    rdfs:label "budget (USD)"@it , "budget (USD)"@en .
+
+:revenue a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:integer ;
+    rdfs:label "incasso (USD)"@it , "revenue (USD)"@en .
+
+:popularity a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:decimal ;
+    rdfs:label "popolarità"@it , "popularity"@en .
+
+:overview a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:string ;
+    rdfs:label "trama"@it , "overview"@en .
+
+:tagline a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:string ;
+    rdfs:label "tagline"@it , "tagline"@en .
+
+:numberOfSeasons a owl:DatatypeProperty ;
+    rdfs:domain :SerieTV ; rdfs:range xsd:integer ;
+    rdfs:label "numero di stagioni"@it , "number of seasons"@en .
+
+:tmdbId a owl:DatatypeProperty ;
+    rdfs:range xsd:integer ;
+    rdfs:label "identificativo TMDB"@it , "TMDB identifier"@en .
+
+:imdbId a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "identificativo IMDb"@it , "IMDb identifier"@en .
+
+:isoCode a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "codice ISO"@it , "ISO code"@en .
+
+:birthDate a owl:DatatypeProperty ;
+    rdfs:domain :Persona ; rdfs:range xsd:date ;
+    rdfs:label "data di nascita"@it , "birth date"@en .
+
+:deathDate a owl:DatatypeProperty ;
+    rdfs:domain :Persona ; rdfs:range xsd:date ;
+    rdfs:label "data di morte"@it , "death date"@en .
+
+:posterPath a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:string ;
+    rdfs:label "percorso del poster"@it , "poster path"@en ;
+    rdfs:comment "Percorso relativo TMDB; l'URL completo è TMDB_IMAGE_BASE + taglia + percorso."@it ,
+        "Relative TMDB path; the full URL is TMDB_IMAGE_BASE + size + path."@en .
+
+:backdropPath a owl:DatatypeProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range xsd:string ;
+    rdfs:label "percorso dello sfondo"@it , "backdrop path"@en .
+
+:profilePath a owl:DatatypeProperty ;
+    rdfs:domain :Persona ; rdfs:range xsd:string ;
+    rdfs:label "percorso della foto profilo"@it , "profile photo path"@en .

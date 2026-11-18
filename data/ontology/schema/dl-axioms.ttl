@@ -1,0 +1,38 @@
+@prefix : <http://example.org/cinetrope#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Assiomi OWL 2 DL che OWL RL non gestisce bene (functional/key producono
+# owl:sameAs spuri, le chain su tropi/attori esplodono a coppie). Questo modulo
+# NON viene caricato nel dataset né passato a owlrl: resta documentazione
+# formale della TBox e viene controllato da scripts/validate_tbox.py.
+
+<http://example.org/cinetrope/schema/dl-axioms> a owl:Ontology ;
+    rdfs:label "CineTrope - assiomi DL"@it , "CineTrope - DL axioms"@en ;
+    owl:versionInfo "2.0.0" .
+
+:releaseYear a owl:FunctionalProperty .
+:releaseDate a owl:FunctionalProperty .
+:runtime a owl:FunctionalProperty .
+:voteAverage a owl:FunctionalProperty .
+:budget a owl:FunctionalProperty .
+:revenue a owl:FunctionalProperty .
+:tmdbId a owl:FunctionalProperty .
+:birthDate a owl:FunctionalProperty .
+
+:subGenreOf a owl:AsymmetricProperty .
+:sequelOf a owl:AsymmetricProperty .
+
+:OperaAudiovisiva owl:hasKey ( :tmdbId ) .
+:Persona owl:hasKey ( :tmdbId ) .
+
+:Film rdfs:subClassOf
+    [ a owl:Restriction ; owl:onProperty :directedBy ;
+      owl:minQualifiedCardinality "1"^^xsd:nonNegativeInteger ; owl:onClass :Regista ] ,
+    [ a owl:Restriction ; owl:onProperty :releaseYear ;
+      owl:maxCardinality "1"^^xsd:nonNegativeInteger ] .
+
+:sharesActorWith owl:propertyChainAxiom ( :starring :actedIn ) .
+:sharesTropeWith owl:propertyChainAxiom ( :hasTrope :tropeUsedIn ) .
+:coStarsWith owl:propertyChainAxiom ( :actedIn :starring ) .

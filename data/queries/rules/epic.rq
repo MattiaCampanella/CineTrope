@@ -1,0 +1,6 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# Datatype restriction: runtime >= 150 minuti.
+CONSTRUCT { ?f a :EpicFilm }
+WHERE { ?f a :Film ; :runtime ?r . FILTER (?r >= 150) }

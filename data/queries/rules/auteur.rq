@@ -1,0 +1,6 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# Regista con almeno un collaboratore frequente (restrizione annidata).
+CONSTRUCT { ?f a :AuteurFilm }
+WHERE { ?f a :Film ; :directedBy ?d . ?d :hasFrequentCollaborator ?p }

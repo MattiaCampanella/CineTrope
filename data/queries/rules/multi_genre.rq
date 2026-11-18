@@ -1,0 +1,6 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# Cardinalità qualificata (OWL RL non la calcola): film con almeno 3 generi.
+CONSTRUCT { ?f a :MultiGenreFilm }
+WHERE { { SELECT ?f WHERE { ?f a :Film ; :hasGenre ?g } GROUP BY ?f HAVING (COUNT(DISTINCT ?g) >= 3) } }

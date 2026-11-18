@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CineTrope">
+  <rect width="64" height="64" rx="15" fill="#ff7a2f"/>
+  <!-- grafo di tre nodi: due film e il tropo che li lega -->
+  <g stroke="#14090a" stroke-width="4.5" stroke-linecap="round" fill="none">
+    <path d="M18 43 32 20"/>
+    <path d="M46 43 32 20"/>
+    <path d="M18 43H46"/>
+  </g>
+  <g fill="#14090a">
+    <circle cx="32" cy="19" r="8.5"/>
+    <circle cx="17" cy="44" r="8.5"/>
+    <circle cx="47" cy="44" r="8.5"/>
+  </g>
+  <circle cx="32" cy="19" r="3.2" fill="#ff7a2f"/>
+</svg>

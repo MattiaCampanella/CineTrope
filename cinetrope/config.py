@@ -8,12 +8,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 TMDB_PATH = RAW_DIR / "tmdb.json"
+IMAGES_PATH = RAW_DIR / "images.json"
 FILMS_PATH = RAW_DIR / "films.json"
 ONTOLOGY_DIR = DATA_DIR / "ontology"
+SCHEMA_DIR = ONTOLOGY_DIR / "schema"
 QUERY_DIR = DATA_DIR / "queries"
+RULES_DIR = QUERY_DIR / "rules"
 GENERATED_DIR = DATA_DIR / "generated"
-TEMPLATE_DIR = BASE_DIR / "templates"
-STATIC_DIR = BASE_DIR / "static"
 
 STORE_PATH = GENERATED_DIR / "store.trig"
 CATALOG_PATH = GENERATED_DIR / "catalog.trig"
@@ -43,3 +44,6 @@ SOURCE_LABELS = {
 }
 
 REQUIRED_SOURCES = ("Wikidata", "DBpedia", "TMDB", "Derived", "Inferred")
+
+# Le immagini non vengono scaricate: il browser le carica dal CDN TMDB.
+TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/"

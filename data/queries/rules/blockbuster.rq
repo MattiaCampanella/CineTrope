@@ -1,0 +1,6 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# Datatype restriction: revenue >= 500M USD.
+CONSTRUCT { ?f a :Blockbuster }
+WHERE { ?f a :Film ; :revenue ?r . FILTER (?r >= 500000000) }

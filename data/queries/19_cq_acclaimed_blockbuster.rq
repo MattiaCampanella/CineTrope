@@ -1,0 +1,9 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# CQ: quali film sono acclamati o blockbuster? (richiede il reimport TMDB: i campi voto/incasso)
+SELECT ?title ?vote ?revenue WHERE {
+  { ?f a :AcclaimedFilm } UNION { ?f a :Blockbuster }
+  ?f rdfs:label ?title .
+  OPTIONAL { ?f :voteAverage ?vote } OPTIONAL { ?f :revenue ?revenue }
+} ORDER BY DESC(?vote) LIMIT 30

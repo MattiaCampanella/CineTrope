@@ -1,0 +1,10 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# CQ: quali film sono di narrativa speculativa pur senza averla dichiarata?
+# Usa la property chain hasGenre ∘ subGenreOf (hasAncestorGenre).
+SELECT ?film ?title ?genreLabel WHERE {
+  ?film :hasAncestorGenre :SpeculativeFiction ; rdfs:label ?title .
+  FILTER NOT EXISTS { ?film :hasGenre :SpeculativeFiction }
+  OPTIONAL { ?film :hasGenre ?g . ?g rdfs:label ?genreLabel }
+} ORDER BY ?title LIMIT 30

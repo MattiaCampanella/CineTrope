@@ -1,0 +1,8 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# CQ: quali film sono di registi con collaboratori frequenti (AuteurFilm)?
+SELECT ?title ?directorName ?collabName WHERE {
+  ?f a :AuteurFilm ; rdfs:label ?title ; :directedBy ?d .
+  ?d rdfs:label ?directorName ; :hasFrequentCollaborator ?c . ?c rdfs:label ?collabName .
+} ORDER BY ?directorName ?title LIMIT 30

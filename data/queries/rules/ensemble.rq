@@ -1,0 +1,6 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# Film corale: almeno 10 attori.
+CONSTRUCT { ?f a :EnsembleFilm }
+WHERE { { SELECT ?f WHERE { ?f a :Film ; :starring ?a } GROUP BY ?f HAVING (COUNT(DISTINCT ?a) >= 10) } }

@@ -1,0 +1,5 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# CQ: quali film appartengono alla classe definita SpeculativeFilm (OWL RL o regola CONSTRUCT)?
+SELECT ?film ?title WHERE { ?film a :SpeculativeFilm ; rdfs:label ?title } ORDER BY ?title LIMIT 25

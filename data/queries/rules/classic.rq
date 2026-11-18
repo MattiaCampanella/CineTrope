@@ -1,0 +1,6 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# Datatype restriction: anno <= 1999.
+CONSTRUCT { ?f a :ClassicFilm }
+WHERE { ?f a :Film ; :releaseYear ?y . FILTER (xsd:integer(STR(?y)) <= 1999) }

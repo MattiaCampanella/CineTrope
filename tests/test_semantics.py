@@ -107,7 +107,7 @@ def test_ontology_validation(store: CineTropeStore) -> None:
 
 def test_competency_questions(store: CineTropeStore) -> None:
     questions = store.competency_questions()
-    assert len(questions) == 9
+    assert len(questions) == 15  # 9 originali + cq10-cq15
     assert all(question["error"] is None for question in questions)
     by_id = {question["id"]: question for question in questions}
     assert len(by_id["cq1"]["rows"]) >= 0

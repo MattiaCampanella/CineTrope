@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from rdflib import Dataset
 
@@ -10,9 +11,12 @@ from .config import (
     GENERATED_DIR,
     ONTOLOGY_DIR,
     RAW_DIR,
+    SCHEMA_DIR,
     SOURCE_GRAPHS,
 )
 from .queries import load_query
+
+log = logging.getLogger(__name__)
 
 
 def slugify(value: str) -> str:
@@ -51,6 +55,10 @@ def _read_optional_json(name: str) -> dict:
 def _load_ontology(dataset: Dataset) -> None:
     graph = dataset.graph(CT.Ontology)
     graph.parse(ONTOLOGY_DIR / "cinetrope.ttl", format="turtle")
+    # dl-axioms.ttl resta fuori dal dataset: OWL RL ne genererebbe sameAs spuri.
+    for module in sorted(SCHEMA_DIR.glob("*.ttl")):
+        if module.stem != "dl-axioms":
+            graph.parse(module, format="turtle")
 
 
 def _add_source_facts(dataset: Dataset, genres, tropes, keywords=()) -> None:
@@ -104,6 +112,11 @@ def _add_people(
             display_names[local] = person
             roles.setdefault(local, set()).add("Attore")
 
+    profiles = {
+        slugify(name): path
+        for film in films
+        for name, path in film.get("profiles", {}).items()
+    }
     metadata_by_local = {slugify(name): data for name, data in people_meta.items()}
     enrichment_by_local = {
         slugify(name): data for name, data in (enrichment or {}).items()
@@ -115,6 +128,8 @@ def _add_people(
         catalog.add((person, RDFS.label, _literal(name)))
         for role in roles[local]:
             catalog.add((person, RDF.type, ct_iri(role)))
+        if local in profiles:
+            catalog.add((person, CT.profilePath, Literal(profiles[local])))
 
         metadata = dict(metadata_by_local.get(local, {}))
         enriched = enrichment_by_local.get(local)
@@ -139,6 +154,66 @@ def _add_people(
             target.add((person, RDFS.label, _literal(name)))
 
 
+_NUMERIC_FIELDS = {
+    "runtime": ("runtime", "integer"),
+    "vote_average": ("voteAverage", "decimal"),
+    "vote_count": ("voteCount", "integer"),
+    "budget": ("budget", "integer"),
+    "revenue": ("revenue", "integer"),
+    "popularity": ("popularity", "decimal"),
+    "tmdb_id": ("tmdbId", "integer"),
+}
+_TEXT_FIELDS = {
+    "overview": "overview",
+    "tagline": "tagline",
+    "imdb_id": "imdbId",
+    "poster_path": "posterPath",
+    "backdrop_path": "backdropPath",
+}
+
+
+def _add_film_details(dataset: Dataset, work, film: dict) -> None:
+    """Campi TMDB opzionali (assenti nei dati vecchi: vengono semplicemente saltati)."""
+    from rdflib import RDF, RDFS, XSD, Literal
+
+    tmdb = dataset.graph(CT.TMDB)
+    for key, (prop, kind) in _NUMERIC_FIELDS.items():
+        value = film.get(key)
+        if value in (None, "", 0):
+            continue
+        tmdb.add((work, CT[prop], Literal(value, datatype=getattr(XSD, kind))))
+    for key, prop in _TEXT_FIELDS.items():
+        if film.get(key):
+            tmdb.add((work, CT[prop], Literal(film[key])))
+    if film.get("release_date"):
+        tmdb.add(
+            (work, CT.releaseDate, Literal(film["release_date"], datatype=XSD.date))
+        )
+    if film.get("original_language"):
+        lang = ct_iri("Lang_" + film["original_language"])
+        tmdb.add((lang, RDF.type, CT.Lingua))
+        tmdb.add((lang, CT.isoCode, Literal(film["original_language"])))
+        tmdb.add((work, CT.originalLanguage, lang))
+    for country in film.get("countries", []):
+        node = ct_iri("Country_" + country["iso"])
+        tmdb.add((node, RDF.type, CT.Paese))
+        tmdb.add((node, CT.isoCode, Literal(country["iso"])))
+        if country.get("name"):
+            tmdb.add((node, RDFS.label, Literal(country["name"], lang="en")))
+        tmdb.add((work, CT.originCountry, node))
+    for company in film.get("companies", []):
+        node = ct_iri("Studio" + str(company["id"]))
+        tmdb.add((node, RDF.type, CT.Studio))
+        tmdb.add((node, RDFS.label, Literal(company["name"])))
+        tmdb.add((work, CT.producedBy, node))
+    collection = film.get("collection")
+    if collection:
+        node = ct_iri("Collection" + str(collection["id"]))
+        tmdb.add((node, RDF.type, CT.Collezione))
+        tmdb.add((node, RDFS.label, Literal(collection["name"])))
+        tmdb.add((work, CT.partOfCollection, node))
+
+
 def _add_films(dataset: Dataset, films) -> None:
     from rdflib import RDF, RDFS, XSD, Literal
 
@@ -152,6 +227,8 @@ def _add_films(dataset: Dataset, films) -> None:
             tmdb.add(
                 (work, CT.releaseYear, Literal(str(film["year"]), datatype=XSD.gYear))
             )
+
+        _add_film_details(dataset, work, film)
 
         for genre_id in film.get("genres", []):
             genre = ct_iri(normalize_genre_id(genre_id))
@@ -192,6 +269,7 @@ def _add_derived_relations(dataset: Dataset, films) -> None:
 
 def build_catalog(write: bool = False) -> Dataset:
     """Costruisce il dataset esplicito, separando le fonti in named graph."""
+    log.info("etl: leggo i JSON in data/raw")
     films = _read_json("films.json")
     genres = _read_json("genres.json")
     tropes = _read_optional_json("tropes.json") or []
@@ -207,14 +285,24 @@ def build_catalog(write: bool = False) -> Dataset:
         films = list(films_by_tmdb_id.values()) + manual_series
         keywords = [keyword for film in films for keyword in film.get("keywords", [])]
         tropes = []
+    if not keywords:
+        # tmdb.json è gitignored: senza di esso le keyword restano comunque in films.json.
+        keywords = [k for film in films for k in film.get("keywords", [])]
     people = _read_json("people.json")
     birthdates = _read_optional_json("dbpedia_birthdates.json")
 
     dataset = Dataset(default_union=True)
+    log.info(
+        "etl: carico l'ontologia e le fonti (%d film, %d keyword)",
+        len(films),
+        len(keywords),
+    )
     _load_ontology(dataset)
     _add_source_facts(dataset, genres, tropes, keywords)
+    log.info("etl: aggiungo persone e film")
     _add_people(dataset, films, people, birthdates)
     _add_films(dataset, films)
+    log.info("etl: relazioni derivate con SPARQL (co-star, collaborazioni)")
     _add_derived_relations(dataset, films)
 
     if write:

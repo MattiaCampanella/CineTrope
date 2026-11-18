@@ -123,6 +123,10 @@ def apply_swrl(graph: Graph, rules: Graph, max_iterations: int = 20) -> dict[str
             if any(atom["kind"] == "unsupported" for atom in body + head):
                 continue
 
+            # Atomi di proprietà prima di quelli di classe: una congiunzione non
+            # dipende dall'ordine, ma Persona(?a) ^ Persona(?b) per primi sarebbe
+            # un prodotto cartesiano. (sorted è stabile.)
+            body.sort(key=lambda atom: atom["kind"] != "property")
             bindings: list[dict] = [{}]
             for atom in body:
                 next_bindings: list[dict] = []

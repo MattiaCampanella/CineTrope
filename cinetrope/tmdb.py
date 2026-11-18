@@ -56,7 +56,51 @@ def _film_record(details: dict, credits: dict, keywords: dict) -> dict:
         "cast": cast,
         "genres": [slugify(genre["name"]) for genre in details.get("genres", [])],
         "keywords": [classify_keyword(item) for item in keywords.get("keywords", [])],
+        # Metadati estesi: letti dall'ETL se presenti, ignorati altrimenti.
+        "poster_path": details.get("poster_path"),
+        "backdrop_path": details.get("backdrop_path"),
+        # nome persona -> profile_path (già presente in /credits, nessuna chiamata extra)
+        "profiles": {
+            person["name"]: person["profile_path"]
+            for person in [
+                p for p in credits.get("crew", []) if p.get("job") == "Director"
+            ]
+            + credits.get("cast", [])[:10]
+            if person.get("profile_path")
+        },
+        "imdb_id": details.get("imdb_id"),
+        "release_date": details.get("release_date") or None,
+        "runtime": details.get("runtime"),
+        "vote_average": details.get("vote_average"),
+        "vote_count": details.get("vote_count"),
+        "budget": details.get("budget"),
+        "revenue": details.get("revenue"),
+        "popularity": details.get("popularity"),
+        "overview": details.get("overview"),
+        "tagline": details.get("tagline"),
+        "original_language": details.get("original_language"),
+        "countries": [
+            {"iso": c["iso_3166_1"], "name": c.get("name")}
+            for c in details.get("production_countries", [])
+        ],
+        "companies": [
+            {"id": c["id"], "name": c["name"]}
+            for c in details.get("production_companies", [])
+        ],
+        "collection": (
+            {
+                "id": details["belongs_to_collection"]["id"],
+                "name": details["belongs_to_collection"]["name"],
+            }
+            if details.get("belongs_to_collection")
+            else None
+        ),
     }
+
+
+def is_complete(record: dict) -> bool:
+    """Un film senza regista o senza anno fallirebbe la validazione del catalogo."""
+    return bool(record.get("directors")) and bool(record.get("year"))
 
 
 def fetch_movie(title: str, api_key: str, language: str = "it-IT") -> dict:

@@ -1,0 +1,10 @@
+PREFIX : <http://example.org/cinetrope#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# CQ: quali coppie di film condividono il regista (property chain directedBy ∘ directorOf)?
+SELECT ?title1 ?title2 ?directorName WHERE {
+  ?f1 :sameDirectorAs ?f2 ; rdfs:label ?title1 .
+  ?f2 rdfs:label ?title2 .
+  ?f1 :directedBy ?d . ?f2 :directedBy ?d . ?d rdfs:label ?directorName .
+  FILTER (STR(?f1) < STR(?f2))
+} ORDER BY ?directorName ?title1 LIMIT 30

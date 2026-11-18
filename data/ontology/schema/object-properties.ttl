@@ -1,0 +1,190 @@
+@prefix : <http://example.org/cinetrope#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://example.org/cinetrope/schema/object-properties> a owl:Ontology ;
+    rdfs:label "CineTrope - proprietà oggetto"@it , "CineTrope - object properties"@en ;
+    owl:versionInfo "2.0.0" .
+
+:hasGenre a owl:ObjectProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Genere ;
+    owl:inverseOf :genreOf ;
+    rdfs:label "ha genere"@it , "has genre"@en .
+
+:genreOf a owl:ObjectProperty ;
+    rdfs:domain :Genere ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "genere di"@it , "genre of"@en .
+
+:subGenreOf a owl:ObjectProperty , owl:TransitiveProperty ;
+    rdfs:domain :Genere ; rdfs:range :Genere ;
+    owl:inverseOf :hasSubGenre ;
+    rdfs:label "sottogenere di"@it , "sub-genre of"@en .
+
+:hasSubGenre a owl:ObjectProperty , owl:TransitiveProperty ;
+    rdfs:domain :Genere ; rdfs:range :Genere ;
+    rdfs:label "ha sottogenere"@it , "has sub-genre"@en .
+
+:hasAncestorGenre a owl:ObjectProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Genere ;
+    owl:propertyChainAxiom ( :hasGenre :subGenreOf ) ;
+    rdfs:label "ha genere antenato"@it , "has ancestor genre"@en ;
+    rdfs:comment "Genere più ampio dei generi dell'opera (property chain hasGenre ∘ subGenreOf). Distinta da hasGenre per non alterare il punteggio delle raccomandazioni."@it ,
+        "Broader genre of the work's genres (chain hasGenre ∘ subGenreOf). Kept apart from hasGenre so recommendation scores are unchanged."@en .
+
+:directedBy a owl:ObjectProperty ;
+    owl:inverseOf :directorOf ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Regista ;
+    rdfs:label "diretto da"@it , "directed by"@en .
+
+:directorOf a owl:ObjectProperty ;
+    rdfs:domain :Regista ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "regista di"@it , "director of"@en .
+
+:starring a owl:ObjectProperty ;
+    owl:inverseOf :actedIn ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Attore ;
+    rdfs:label "interpretato da"@it , "starring"@en .
+
+:actedIn a owl:ObjectProperty ;
+    rdfs:domain :Attore ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "ha recitato in"@it , "acted in"@en .
+
+:coStarsWith a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :Attore ; rdfs:range :Attore ;
+    rdfs:label "recita insieme a"@it , "co-stars with"@en .
+
+:hasTrope a owl:ObjectProperty ;
+    owl:inverseOf :tropeUsedIn ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Tropo ;
+    rdfs:label "usa il tropo"@it , "has trope"@en .
+
+:tropeUsedIn a owl:ObjectProperty ;
+    rdfs:domain :Tropo ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "tropo usato in"@it , "trope used in"@en .
+
+:usesTrope a owl:ObjectProperty ;
+    owl:equivalentProperty :hasTrope ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Tropo ;
+    rdfs:label "usa il tropo (alias)"@it , "uses trope (alias)"@en .
+
+:hasElement a owl:ObjectProperty ;
+    owl:inverseOf :elementUsedIn ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :ElementoDescrittivo ;
+    rdfs:label "ha elemento descrittivo"@it , "has descriptive element"@en .
+
+:elementUsedIn a owl:ObjectProperty ;
+    rdfs:domain :ElementoDescrittivo ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "elemento descrittivo presente in"@it , "descriptive element used in"@en .
+
+:hasScene a owl:ObjectProperty ;
+    owl:inverseOf :sceneIn ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Scena ;
+    rdfs:label "contiene la scena"@it , "has scene"@en .
+
+:sceneIn a owl:ObjectProperty ;
+    rdfs:domain :Scena ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "scena presente in"@it , "scene in"@en .
+
+:annotatedWith a owl:ObjectProperty ;
+    rdfs:domain :Scena ; rdfs:range :Tropo ;
+    rdfs:label "annotata con"@it , "annotated with"@en .
+
+:statedBy a owl:ObjectProperty ;
+    rdfs:domain :Scena ; rdfs:range :Fonte ;
+    rdfs:label "dichiarata da"@it , "stated by"@en .
+
+:collaboratedWith a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :Persona ; rdfs:range :Persona ;
+    rdfs:label "ha collaborato con"@it , "collaborated with"@en .
+
+:frequentCollaboration a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:subPropertyOf :collaboratedWith ;
+    rdfs:domain :Persona ; rdfs:range :Persona ;
+    rdfs:label "collaborazione frequente"@it , "frequent collaboration"@en ;
+    rdfs:comment "Asserita dall'ETL quando due persone hanno lavorato insieme in almeno quattro opere."@it ,
+        "Asserted by the ETL when two people worked together on at least four works."@en .
+
+:hasFrequentCollaborator a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:subPropertyOf :collaboratedWith ;
+    rdfs:domain :Persona ; rdfs:range :Persona ;
+    rdfs:label "ha un collaboratore frequente"@it , "has frequent collaborator"@en ;
+    rdfs:comment "Inferita dalla regola SWRL FrequentCollaboratorRule."@it ,
+        "Inferred by the SWRL rule FrequentCollaboratorRule."@en .
+
+:sameDirectorAs a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :OperaAudiovisiva ;
+    owl:propertyChainAxiom ( :directedBy :directorOf ) ;
+    rdfs:label "stesso regista di"@it , "same director as"@en ;
+    rdfs:comment "Property chain directedBy ∘ directorOf (include il caso riflessivo, filtrato nelle query)."@it ,
+        "Chain directedBy ∘ directorOf (includes the reflexive case, filtered in queries)."@en .
+
+:sameCollectionAs a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :OperaAudiovisiva ;
+    owl:propertyChainAxiom ( :partOfCollection :hasPart ) ;
+    rdfs:label "stesso franchise di"@it , "same franchise as"@en .
+
+:partOfCollection a owl:ObjectProperty ;
+    owl:inverseOf :hasPart ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Collezione ;
+    rdfs:label "parte della collezione"@it , "part of collection"@en .
+
+:hasPart a owl:ObjectProperty ;
+    rdfs:domain :Collezione ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "comprende"@it , "includes"@en .
+
+:sequelOf a owl:ObjectProperty , owl:TransitiveProperty ;
+    owl:inverseOf :hasSequel ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "sequel di"@it , "sequel of"@en .
+
+:hasSequel a owl:ObjectProperty , owl:TransitiveProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "ha come sequel"@it , "has sequel"@en .
+
+:producedBy a owl:ObjectProperty ;
+    owl:inverseOf :produced ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Studio ;
+    rdfs:label "prodotto da"@it , "produced by"@en .
+
+:produced a owl:ObjectProperty ;
+    rdfs:domain :Studio ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "ha prodotto"@it , "produced"@en .
+
+:originCountry a owl:ObjectProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Paese ;
+    rdfs:label "paese di origine"@it , "origin country"@en .
+
+:originalLanguage a owl:ObjectProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Lingua ;
+    rdfs:label "lingua originale"@it , "original language"@en .
+
+# --- Proprietà del grafo di spiegazione (CONSTRUCT) -------------------------
+
+:recommends a owl:ObjectProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "raccomanda"@it , "recommends"@en .
+
+:recommendedBecause a owl:ObjectProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :Tropo ;
+    rdfs:label "raccomandato per il tropo"@it , "recommended because of trope"@en .
+
+:sharesTropeWith a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "condivide un tropo con"@it , "shares a trope with"@en .
+
+:sharesDirectorWith a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :OperaAudiovisiva ;
+    rdfs:subPropertyOf :sameDirectorAs ;
+    rdfs:label "condivide il regista con"@it , "shares director with"@en .
+
+:sharesActorWith a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "condivide un attore con"@it , "shares an actor with"@en .
+
+:sharesGenreWith a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain :OperaAudiovisiva ; rdfs:range :OperaAudiovisiva ;
+    rdfs:label "condivide un genere con"@it , "shares a genre with"@en .
+
+:assertedIn a owl:ObjectProperty ;
+    rdfs:domain rdfs:Resource ; rdfs:range :Fonte ;
+    rdfs:label "asserito nella fonte"@it , "asserted in source"@en .
