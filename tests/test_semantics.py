@@ -91,6 +91,24 @@ def test_explanation_construct_does_not_invent_shares(store: CineTropeStore) -> 
     assert "TMDB27205" in explanation["turtle"]
 
 
+def test_explanation_construct_only_links_shared_tropes(store: CineTropeStore) -> None:
+    seed = "TMDB27205"
+    rec = "TMDB49026"
+    shared_tropes = {
+        item["id"] for item in store.shared_details(seed, rec)["tropes"]
+    }
+
+    explanation = store.explanation(seed, rec)
+    graph_tropes = {
+        triple["object"]
+        for triple in explanation["triples"]
+        if triple["predicate"] == "hasTrope"
+        and triple["subject"] == rec
+    }
+
+    assert graph_tropes == shared_tropes
+
+
 def test_provenance(store: CineTropeStore) -> None:
     sources = store.provenance("TMDB27205", "dreams")
     assert sources

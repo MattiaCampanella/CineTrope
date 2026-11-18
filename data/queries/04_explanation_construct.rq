@@ -40,7 +40,10 @@ WHERE {
   <{{REC}}> rdfs:label ?recLabel .
 
   {
-    GRAPH ?source { <{{REC}}> :hasTrope ?trope }
+    GRAPH ?source {
+      <{{SEED}}> :hasTrope ?trope .
+      <{{REC}}> :hasTrope ?trope .
+    }
     BIND (:sharesTropeWith AS ?sharePredicate)
     ?trope rdfs:label ?tropeLabel .
     ?source rdfs:label ?sourceLabel .
