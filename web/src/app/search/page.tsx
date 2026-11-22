@@ -5,15 +5,19 @@ import type { Card } from "@/lib/types";
 import { FilmCard } from "@/components/FilmCard";
 
 const CLASSES: [string, string][] = [
-  ["SpeculativeFilm", "Narrativa speculativa"],
-  ["EnsembleFilm", "Film corali"],
-  ["MultiGenreFilm", "Multigenere"],
-  ["AuteurFilm", "Registi con collaboratori fissi"],
-  ["ClassicFilm", "Classici"],
-  ["AcclaimedFilm", "Acclamati"],
-  ["Blockbuster", "Blockbuster"],
-  ["EpicFilm", "Kolossal"],
-  ["MindBender", "Mind-bender"],
+  ["AcclaimedFilm", "Acclamati (≥ 7.5)"],
+  ["Blockbuster", "Blockbuster (≥ 500M $)"],
+  ["AcclaimedBlockbuster", "Blockbuster acclamati"],
+  ["ProfitableFilm", "Profittevoli (ROI ≥ 2×)"],
+  ["BoxOfficeFlop", "Flop al botteghino"],
+  ["NotableFilm", "Notevoli (owl:unionOf)"],
+  ["EpicFilm", "Kolossal (≥ 150 min)"],
+  ["StandardLengthFilm", "Durata standard (¬Epic)"],
+  ["CollectionFilm", "Franchise"],
+  ["MultiGenreFilm", "Multigenere (≥ 3 generi)"],
+  ["EnsembleFilm", "Film corali (≥ 7 attori)"],
+  ["AwardedFilm", "Oscar Miglior Film"],
+  ["PremioFilm", "Corali acclamati (SWRL)"],
 ];
 
 type Suggestion = { label: string; kind: string; id: string };

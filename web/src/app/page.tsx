@@ -7,11 +7,17 @@ import { Rail } from "@/components/Rail";
 export const metadata = { title: "Raccomandazioni spiegabili" };
 
 const NOTES: Record<string, string> = {
+  awarded: "Classe definita con owl:hasValue su codice premio Wikidata (Oscar Best Picture).",
+  acclaimed_blockbuster: "Intersezione di classi definite: AcclaimedFilm ⊓ Blockbuster (HermiT).",
+  premio: "Inferita dalla regola SWRL EnsembleAwardRule (EnsembleFilm ∧ AcclaimedFilm ∧ ProfitableFilm).",
+  profitable: "Datatype restriction su ROI ≥ 2.0 (incasso almeno doppio rispetto al budget, HermiT).",
+  notable: "Unione chiusa di classi definite: AcclaimedFilm ⊔ AwardedFilm ⊔ Blockbuster (owl:unionOf).",
+  acclaimed: "Voto medio TMDB ≥ 7.5 (datatype restriction xsd:minInclusive, HermiT).",
+  blockbuster: "Incasso ≥ 500 milioni USD (datatype restriction, classificato da HermiT).",
+  epic: "Durata ≥ 150 minuti (datatype restriction; complementare a StandardLengthFilm sotto OWA).",
+  collection: "Appartiene a una collezione/franchise (someValuesFrom su classe nominata, HermiT).",
+  ensemble: "Sette o più attori accreditati (datatype restriction castSize ≥ 7, HermiT).",
   tropes: "Più keyword narrative, più strade verso altri film.",
-  speculative: "Classe definita: generi discendenti da Narrativa speculativa (property chain).",
-  ensemble: "Dieci o più attori accreditati (cardinalità qualificata).",
-  auteur: "Registi che tornano a lavorare con gli stessi collaboratori (regola SWRL).",
-  classic: "Usciti entro il 1999 (datatype restriction).",
 };
 
 const n = (value: number) => value.toLocaleString("it-IT");

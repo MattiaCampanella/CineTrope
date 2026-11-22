@@ -1,0 +1,240 @@
+@prefix ct: <http://example.org/cinetrope#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix swrl: <http://www.w3.org/2003/11/swrl#> .
+@prefix swrla: <http://swrl.stanford.edu/ontologies/3.3/swrla.owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ct:EnsembleAwardRule a swrl:Imp ;
+    rdfs:label "EnsembleAwardRule"^^xsd:string ;
+    swrla:isRuleEnabled true ;
+    rdfs:comment "Film che è simultaneamente EnsembleFilm, AcclaimedFilm e ProfitableFilm → PremioFilm (chaining OWL 2 DL → SWRL)."@it ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first [ a swrl:ClassAtom ;
+                    swrl:argument1 <urn:swrl:var#f> ;
+                    swrl:classPredicate ct:Film ] ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first [ a swrl:ClassAtom ;
+                            swrl:argument1 <urn:swrl:var#f> ;
+                            swrl:classPredicate ct:EnsembleFilm ] ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first [ a swrl:ClassAtom ;
+                                    swrl:argument1 <urn:swrl:var#f> ;
+                                    swrl:classPredicate ct:AcclaimedFilm ] ;
+                            rdf:rest [ a swrl:AtomList ;
+                                    rdf:first [ a swrl:ClassAtom ;
+                                            swrl:argument1 <urn:swrl:var#f> ;
+                                            swrl:classPredicate ct:ProfitableFilm ] ;
+                                    rdf:rest () ] ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first [ a swrl:ClassAtom ;
+                    swrl:argument1 <urn:swrl:var#f> ;
+                    swrl:classPredicate ct:PremioFilm ] ;
+            rdf:rest () ] .
+
+ct:FrequentCollaboratorRule a swrl:Imp ;
+    rdfs:label "FrequentCollaboratorRule"^^xsd:string ;
+    swrla:isRuleEnabled true ;
+    rdfs:comment "Regista e attore che collaborano su almeno 2 film distinti → hasFrequentCollaborator (ciclo a diamante non esprimibile in OWL 2 DL)."@it ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first [ a swrl:ClassAtom ;
+                    swrl:argument1 <urn:swrl:var#f1> ;
+                    swrl:classPredicate ct:Film ] ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first [ a swrl:ClassAtom ;
+                            swrl:argument1 <urn:swrl:var#f2> ;
+                            swrl:classPredicate ct:Film ] ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first [ a swrl:DifferentIndividualsAtom ;
+                                    swrl:argument1 <urn:swrl:var#f1> ;
+                                    swrl:argument2 <urn:swrl:var#f2> ] ;
+                            rdf:rest [ a swrl:AtomList ;
+                                    rdf:first [ a swrl:IndividualPropertyAtom ;
+                                            swrl:argument1 <urn:swrl:var#f1> ;
+                                            swrl:argument2 <urn:swrl:var#d> ;
+                                            swrl:propertyPredicate ct:directedBy ] ;
+                                    rdf:rest [ a swrl:AtomList ;
+                                            rdf:first [ a swrl:IndividualPropertyAtom ;
+                                                    swrl:argument1 <urn:swrl:var#f2> ;
+                                                    swrl:argument2 <urn:swrl:var#d> ;
+                                                    swrl:propertyPredicate ct:directedBy ] ;
+                                            rdf:rest [ a swrl:AtomList ;
+                                                    rdf:first [ a swrl:IndividualPropertyAtom ;
+                                                            swrl:argument1 <urn:swrl:var#f1> ;
+                                                            swrl:argument2 <urn:swrl:var#a> ;
+                                                            swrl:propertyPredicate ct:starring ] ;
+                                                    rdf:rest [ a swrl:AtomList ;
+                                                            rdf:first [ a swrl:IndividualPropertyAtom ;
+                                                                    swrl:argument1 <urn:swrl:var#f2> ;
+                                                                    swrl:argument2 <urn:swrl:var#a> ;
+                                                                    swrl:propertyPredicate ct:starring ] ;
+                                                            rdf:rest () ] ] ] ] ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first [ a swrl:IndividualPropertyAtom ;
+                    swrl:argument1 <urn:swrl:var#d> ;
+                    swrl:argument2 <urn:swrl:var#a> ;
+                    swrl:propertyPredicate ct:hasFrequentCollaborator ] ;
+            rdf:rest () ] .
+
+ct:SelfDirectedRoleRule a swrl:Imp ;
+    rdfs:label "SelfDirectedRoleRule"^^xsd:string ;
+    swrla:isRuleEnabled true ;
+    rdfs:comment "Persona che dirige e interpreta lo stesso film → AutoreInterprete (role conjunction non esprimibile in OWL 2 DL)."@it ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first [ a swrl:ClassAtom ;
+                    swrl:argument1 <urn:swrl:var#f> ;
+                    swrl:classPredicate ct:Film ] ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first [ a swrl:IndividualPropertyAtom ;
+                            swrl:argument1 <urn:swrl:var#f> ;
+                            swrl:argument2 <urn:swrl:var#p> ;
+                            swrl:propertyPredicate ct:directedBy ] ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first [ a swrl:IndividualPropertyAtom ;
+                                    swrl:argument1 <urn:swrl:var#f> ;
+                                    swrl:argument2 <urn:swrl:var#p> ;
+                                    swrl:propertyPredicate ct:starring ] ;
+                            rdf:rest () ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first [ a swrl:ClassAtom ;
+                    swrl:argument1 <urn:swrl:var#p> ;
+                    swrl:classPredicate ct:AutoreInterprete ] ;
+            rdf:rest () ] .
+
+ct:SequelDirectorRule a swrl:Imp ;
+    rdfs:label "SequelDirectorRule"^^xsd:string ;
+    swrla:isRuleEnabled true ;
+    rdfs:comment "Regista che dirige sia un film sia un suo sequel (anche transitivo) → SequelDirector (triangolo non esprimibile in OWL 2 DL)."@it ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first [ a swrl:ClassAtom ;
+                    swrl:argument1 <urn:swrl:var#f1> ;
+                    swrl:classPredicate ct:Film ] ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first [ a swrl:ClassAtom ;
+                            swrl:argument1 <urn:swrl:var#f2> ;
+                            swrl:classPredicate ct:Film ] ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first [ a swrl:IndividualPropertyAtom ;
+                                    swrl:argument1 <urn:swrl:var#f2> ;
+                                    swrl:argument2 <urn:swrl:var#f1> ;
+                                    swrl:propertyPredicate ct:sequelOf ] ;
+                            rdf:rest [ a swrl:AtomList ;
+                                    rdf:first [ a swrl:IndividualPropertyAtom ;
+                                            swrl:argument1 <urn:swrl:var#f1> ;
+                                            swrl:argument2 <urn:swrl:var#d> ;
+                                            swrl:propertyPredicate ct:directedBy ] ;
+                                    rdf:rest [ a swrl:AtomList ;
+                                            rdf:first [ a swrl:IndividualPropertyAtom ;
+                                                    swrl:argument1 <urn:swrl:var#f2> ;
+                                                    swrl:argument2 <urn:swrl:var#d> ;
+                                                    swrl:propertyPredicate ct:directedBy ] ;
+                                            rdf:rest () ] ] ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first [ a swrl:ClassAtom ;
+                    swrl:argument1 <urn:swrl:var#d> ;
+                    swrl:classPredicate ct:SequelDirector ] ;
+            rdf:rest () ] .
+
+ct:SharedCollectionRule a swrl:Imp ;
+    rdfs:label "SharedCollectionRule"^^xsd:string ;
+    swrla:isRuleEnabled true ;
+    rdfs:comment "Due film distinti della stessa collezione condividono il franchise (evita self-loop a differenza di una property chain)."@it ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first [ a swrl:ClassAtom ;
+                    swrl:argument1 <urn:swrl:var#f1> ;
+                    swrl:classPredicate ct:Film ] ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first [ a swrl:ClassAtom ;
+                            swrl:argument1 <urn:swrl:var#f2> ;
+                            swrl:classPredicate ct:Film ] ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first [ a swrl:DifferentIndividualsAtom ;
+                                    swrl:argument1 <urn:swrl:var#f1> ;
+                                    swrl:argument2 <urn:swrl:var#f2> ] ;
+                            rdf:rest [ a swrl:AtomList ;
+                                    rdf:first [ a swrl:IndividualPropertyAtom ;
+                                            swrl:argument1 <urn:swrl:var#f1> ;
+                                            swrl:argument2 <urn:swrl:var#c> ;
+                                            swrl:propertyPredicate ct:partOfCollection ] ;
+                                    rdf:rest [ a swrl:AtomList ;
+                                            rdf:first [ a swrl:IndividualPropertyAtom ;
+                                                    swrl:argument1 <urn:swrl:var#f2> ;
+                                                    swrl:argument2 <urn:swrl:var#c> ;
+                                                    swrl:propertyPredicate ct:partOfCollection ] ;
+                                            rdf:rest () ] ] ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first [ a swrl:IndividualPropertyAtom ;
+                    swrl:argument1 <urn:swrl:var#f1> ;
+                    swrl:argument2 <urn:swrl:var#f2> ;
+                    swrl:propertyPredicate ct:sameCollectionAs ] ;
+            rdf:rest () ] .
+
+ct:VersatileAuteurRule a swrl:Imp ;
+    rdfs:label "VersatileAuteurRule"^^xsd:string ;
+    swrla:isRuleEnabled true ;
+    rdfs:comment "Regista di almeno un AcclaimedFilm che ha diretto 2 film distinti di 2 generi distinti → VersatileAuteur."@it ;
+    swrl:body [ a swrl:AtomList ;
+            rdf:first [ a swrl:ClassAtom ;
+                    swrl:argument1 <urn:swrl:var#d> ;
+                    swrl:classPredicate ct:Regista ] ;
+            rdf:rest [ a swrl:AtomList ;
+                    rdf:first [ a swrl:IndividualPropertyAtom ;
+                            swrl:argument1 <urn:swrl:var#d> ;
+                            swrl:argument2 <urn:swrl:var#f1> ;
+                            swrl:propertyPredicate ct:directorOf ] ;
+                    rdf:rest [ a swrl:AtomList ;
+                            rdf:first [ a swrl:ClassAtom ;
+                                    swrl:argument1 <urn:swrl:var#f1> ;
+                                    swrl:classPredicate ct:AcclaimedFilm ] ;
+                            rdf:rest [ a swrl:AtomList ;
+                                    rdf:first [ a swrl:IndividualPropertyAtom ;
+                                            swrl:argument1 <urn:swrl:var#f1> ;
+                                            swrl:argument2 <urn:swrl:var#g1> ;
+                                            swrl:propertyPredicate ct:hasGenre ] ;
+                                    rdf:rest [ a swrl:AtomList ;
+                                            rdf:first [ a swrl:IndividualPropertyAtom ;
+                                                    swrl:argument1 <urn:swrl:var#d> ;
+                                                    swrl:argument2 <urn:swrl:var#f2> ;
+                                                    swrl:propertyPredicate ct:directorOf ] ;
+                                            rdf:rest [ a swrl:AtomList ;
+                                                    rdf:first [ a swrl:IndividualPropertyAtom ;
+                                                            swrl:argument1 <urn:swrl:var#f2> ;
+                                                            swrl:argument2 <urn:swrl:var#g2> ;
+                                                            swrl:propertyPredicate ct:hasGenre ] ;
+                                                    rdf:rest [ a swrl:AtomList ;
+                                                            rdf:first [ a swrl:DifferentIndividualsAtom ;
+                                                                    swrl:argument1 <urn:swrl:var#f1> ;
+                                                                    swrl:argument2 <urn:swrl:var#f2> ] ;
+                                                            rdf:rest [ a swrl:AtomList ;
+                                                                    rdf:first [ a swrl:DifferentIndividualsAtom ;
+                                                                            swrl:argument1 <urn:swrl:var#g1> ;
+                                                                            swrl:argument2 <urn:swrl:var#g2> ] ;
+                                                                    rdf:rest () ] ] ] ] ] ] ] ] ;
+    swrl:head [ a swrl:AtomList ;
+            rdf:first [ a swrl:ClassAtom ;
+                    swrl:argument1 <urn:swrl:var#d> ;
+                    swrl:classPredicate ct:VersatileAuteur ] ;
+            rdf:rest () ] .
+
+<urn:swrl:var#a1> a swrl:Variable .
+
+<urn:swrl:var#a2> a swrl:Variable .
+
+<urn:swrl:var#c> a swrl:Variable .
+
+<urn:swrl:var#g1> a swrl:Variable .
+
+<urn:swrl:var#g2> a swrl:Variable .
+
+<urn:swrl:var#a> a swrl:Variable .
+
+<urn:swrl:var#p> a swrl:Variable .
+
+<urn:swrl:var#f> a swrl:Variable .
+
+<urn:swrl:var#d> a swrl:Variable .
+
+<urn:swrl:var#f2> a swrl:Variable .
+
+<urn:swrl:var#f1> a swrl:Variable .
+

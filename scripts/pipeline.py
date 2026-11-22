@@ -24,6 +24,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from rdflib import OWL, RDF, RDFS, BNode, Graph, Literal, URIRef
+from rdflib.query import ResultRow
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
@@ -32,20 +33,22 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from cinetrope.config import (  # noqa: E402
+    CORE_TTL,
     CT,
     FILMS_PATH,
     GENERATED_DIR,
     IMAGES_PATH,
+    INFERRED_TTL,
     ONTOLOGY_DIR,
     QUERY_DIR,
     RAW_DIR,
-    SCHEMA_DIR,
     STORE_PATH,
     TMDB_PATH,
 )
 
 log = logging.getLogger("pipeline")
 BIRTHDATES_PATH = RAW_DIR / "dbpedia_birthdates.json"
+NOTEBOOK_PATH = ROOT / "notebooks" / "build_ontology.ipynb"
 
 
 # ======================================================================
@@ -279,7 +282,10 @@ def _birthdates_chunk(chunk: list[str]) -> dict[str, dict]:
     result = Graph().query(query)
     iri_to_name = {str(dbpedia_iri(name)): name for name in chunk}
     found: dict[str, dict] = {}
-    for person, birth_date in [] if isinstance(result, bool) else list(result):
+    for row in result:
+        if not isinstance(row, ResultRow):
+            continue
+        person, birth_date = row[0], row[1]
         name = iri_to_name.get(str(person))
         date = _iso_date(birth_date)
         if name and date:
@@ -361,13 +367,77 @@ def cmd_birthdates(args: argparse.Namespace) -> bool:
 
 
 # ======================================================================
-# Validazione statica della TBox (ex validate_tbox.py)
+# Costruzione ontologia ristretta dal notebook (core.ttl + inferred.ttl)
+# ======================================================================
+def cmd_core(args: argparse.Namespace) -> bool:
+    import subprocess
+    import tempfile
+
+    if not NOTEBOOK_PATH.exists():
+        log.error("core: notebook non trovato: %s", NOTEBOOK_PATH)
+        return False
+
+    if (
+        CORE_TTL.exists()
+        and INFERRED_TTL.exists()
+        and not args.force
+        and CORE_TTL.stat().st_mtime >= NOTEBOOK_PATH.stat().st_mtime
+    ):
+        log.info(
+            "core: salto, %s e %s sono già aggiornati. Usa --force per rieseguire il notebook.",
+            CORE_TTL.name,
+            INFERRED_TTL.name,
+        )
+        return True
+
+    log.info("core: eseguo %s (nbconvert --to script + exec)", NOTEBOOK_PATH)
+    started = time.time()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        script_stem = Path(tmpdir) / "build_ontology"
+        convert = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "jupyter",
+                "nbconvert",
+                "--to",
+                "script",
+                str(NOTEBOOK_PATH),
+                "--output",
+                str(script_stem),
+            ],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+        )
+        if convert.returncode != 0:
+            log.error("core: nbconvert fallito:\n%s", convert.stderr)
+            return False
+
+        script_path = script_stem.with_suffix(".py")
+        run = subprocess.run(
+            [sys.executable, str(script_path)],
+            cwd=str(ROOT),
+            capture_output=False,
+        )
+        if run.returncode != 0:
+            log.error("core: esecuzione script fallita (exit %d)", run.returncode)
+            return False
+
+    log.info("core: completato in %.0fs", time.time() - started)
+    return CORE_TTL.exists()
+
+
+# ======================================================================
+# Validazione statica della TBox (core.ttl)
 # ======================================================================
 def load_tbox() -> Graph:
     graph = Graph()
-    graph.parse(ONTOLOGY_DIR / "cinetrope.ttl", format="turtle")
-    for module in sorted(SCHEMA_DIR.glob("*.ttl")):
-        graph.parse(module, format="turtle")
+    if not CORE_TTL.exists():
+        raise FileNotFoundError(
+            f"Ontologia non trovata: {CORE_TTL}. Esegui prima `pipeline.py core`."
+        )
+    graph.parse(str(CORE_TTL), format="turtle")
     return graph
 
 
@@ -451,7 +521,7 @@ def check(graph: Graph) -> dict[str, list[str]]:
 
 
 def cmd_validate(args: argparse.Namespace) -> bool:
-    log.info("validate: carico la TBox da %s", SCHEMA_DIR)
+    log.info("validate: carico la TBox da %s", CORE_TTL)
     problems = check(load_tbox())
     for name, items in problems.items():
         (log.info if not items else log.warning)(
@@ -463,22 +533,27 @@ def cmd_validate(args: argparse.Namespace) -> bool:
 
 
 # ======================================================================
-# ETL / reasoning / store (ex build_dataset.py e build_store.py)
+# ETL / reasoning / store (da core.ttl + inferred.ttl)
 # ======================================================================
 def _inputs_mtime() -> float:
-    """Ultima modifica di dati, ontologia, query e codice che alimentano lo store."""
-    paths = [*RAW_DIR.glob("*.json"), *ONTOLOGY_DIR.rglob("*"), *QUERY_DIR.rglob("*")]
-    paths += (ROOT / "cinetrope").glob("*.py")
+    """Ultima modifica di ontologia, inferenze, query e codice che alimentano lo store."""
+    paths = [
+        CORE_TTL,
+        INFERRED_TTL,
+        NOTEBOOK_PATH,
+        *QUERY_DIR.rglob("*"),
+        *(ROOT / "cinetrope").glob("*.py"),
+    ]
     return max((p.stat().st_mtime for p in paths if p.is_file()), default=0.0)
 
 
 def cmd_dataset(args: argparse.Namespace) -> bool:
-    from cinetrope.etl import build_catalog, dataset_stats
+    from cinetrope.etl import build_from_core, dataset_stats
 
-    log.info("dataset: ETL dei JSON in named graph (senza inferenza)")
+    log.info("dataset: carico core.ttl + inferred.ttl in named graph")
     started = time.time()
-    stats = dataset_stats(build_catalog(write=True))
-    log.info("dataset: fatto in %.0fs, scritto catalog.trig", time.time() - started)
+    stats = dataset_stats(build_from_core(write=True))
+    log.info("dataset: fatto in %.0fs, scritto store.trig", time.time() - started)
     for key, value in stats.items():
         log.info("dataset:   %s = %s", key, value)
     return True
@@ -490,13 +565,13 @@ def cmd_store(args: argparse.Namespace) -> bool:
     if STORE_PATH.exists() and not args.force:
         if STORE_PATH.stat().st_mtime >= _inputs_mtime():
             log.info(
-                "store: salto, %s è più recente di dati, ontologia, query e codice. "
+                "store: salto, %s è più recente di core.ttl, inferred.ttl, query e codice. "
                 "Usa --force per ricostruirlo.",
                 STORE_PATH.name,
             )
             return True
-        log.info("store: dati o ontologia modificati dopo l'ultima build, ricostruisco")
-    log.info("store: ETL, OWL RL, SWRL e validazione (circa 3 minuti)")
+        log.info("store: core.ttl o codice modificati dopo l'ultima build, ricostruisco")
+    log.info("store: carico core.ttl + inferred.ttl e valido")
     started = time.time()
     store = CineTropeStore.rebuild()
     log.info("store: costruito in %.0fs, scritto %s", time.time() - started, STORE_PATH)
@@ -519,8 +594,7 @@ def cmd_fetch(args: argparse.Namespace) -> bool:
 
 def cmd_all(args: argparse.Namespace) -> bool:
     ok = True
-    for step in (cmd_fetch, cmd_validate, cmd_store):
-        # I fallimenti di rete o i warning della TBox non bloccano la build dello store.
+    for step in (cmd_core, cmd_validate, cmd_store):
         ok &= step(args)
     return ok
 
@@ -615,10 +689,16 @@ def build_parser() -> argparse.ArgumentParser:
             [common, tmdb, images, birth],
             "tmdb + images + birthdates",
         ),
-        ("validate", cmd_validate, [common], "Controlli statici sulla TBox"),
-        ("dataset", cmd_dataset, [common], "Solo ETL: catalog.trig senza inferenza"),
-        ("store", cmd_store, [common], "ETL + OWL RL + SWRL + validazione: store.trig"),
-        ("all", cmd_all, [common, tmdb, images, birth], "fetch + validate + store"),
+        (
+            "core",
+            cmd_core,
+            [common],
+            "Esegue notebooks/build_ontology.ipynb: core.ttl + inferred.ttl (HermiT)",
+        ),
+        ("validate", cmd_validate, [common], "Controlli statici sulla TBox (core.ttl)"),
+        ("dataset", cmd_dataset, [common], "Carica core.ttl + inferred.ttl in store.trig"),
+        ("store", cmd_store, [common], "Ricostruisce store.trig e build_report.json da core.ttl"),
+        ("all", cmd_all, [common, tmdb, images, birth], "core + validate + store"),
     ]
     for name, func, parents, help_text in steps:
         sub.add_parser(

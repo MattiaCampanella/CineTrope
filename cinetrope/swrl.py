@@ -2,16 +2,30 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from rdflib import RDF, Graph, Variable
+from rdflib import RDF, Graph, URIRef, Variable
 from rdflib.collection import Collection
 
-from .config import ONTOLOGY_DIR, SWRL
+from .config import CORE_SWRL_N3, CORE_TTL, SWRL
 
 
 def load_rule_graph() -> Graph:
     graph = Graph()
-    graph.parse(ONTOLOGY_DIR / "cinetrope-swrl.n3", format="n3")
+    if CORE_SWRL_N3.exists():
+        graph.parse(CORE_SWRL_N3, format="n3")
+    elif CORE_TTL.exists():
+        graph.parse(CORE_TTL, format="turtle")
     return graph
+
+
+def _is_var(term, rules: Graph | None = None) -> bool:
+    if isinstance(term, Variable):
+        return True
+    if isinstance(term, URIRef):
+        if str(term).startswith("urn:swrl:var#"):
+            return True
+        if rules is not None and (term, RDF.type, SWRL.Variable) in rules:
+            return True
+    return False
 
 
 def _atom_kind(graph: Graph, atom) -> str | None:
@@ -19,6 +33,8 @@ def _atom_kind(graph: Graph, atom) -> str | None:
         return "class"
     if (atom, RDF.type, SWRL.IndividualPropertyAtom) in graph:
         return "property"
+    if (atom, RDF.type, SWRL.DifferentIndividualsAtom) in graph:
+        return "different"
     return None
 
 
@@ -37,11 +53,17 @@ def _parse_atom(graph: Graph, atom) -> dict:
             "arg1": graph.value(atom, SWRL.argument1),
             "arg2": graph.value(atom, SWRL.argument2),
         }
+    if kind == "different":
+        return {
+            "kind": "different",
+            "arg1": graph.value(atom, SWRL.argument1),
+            "arg2": graph.value(atom, SWRL.argument2),
+        }
     return {"kind": "unsupported"}
 
 
 def _unify(binding: dict, term, value) -> dict | None:
-    if isinstance(term, Variable):
+    if _is_var(term):
         if term in binding:
             return binding if binding[term] == value else None
         candidate = dict(binding)
@@ -56,7 +78,7 @@ def _match_atom(graph: Graph, atom: dict, binding: dict) -> list[dict]:
         arg1 = atom["arg1"]
         if arg1 is None:
             return []
-        if isinstance(arg1, Variable) and arg1 in binding:
+        if _is_var(arg1) and arg1 in binding:
             subject = binding[arg1]
             return [binding] if (subject, RDF.type, predicate) in graph else []
         results = []
@@ -70,8 +92,8 @@ def _match_atom(graph: Graph, atom: dict, binding: dict) -> list[dict]:
         predicate = atom["predicate"]
         arg1, arg2 = atom["arg1"], atom["arg2"]
         results = []
-        bound1 = binding.get(arg1) if isinstance(arg1, Variable) else arg1
-        bound2 = binding.get(arg2) if isinstance(arg2, Variable) else arg2
+        bound1 = binding.get(arg1) if _is_var(arg1) else arg1
+        bound2 = binding.get(arg2) if _is_var(arg2) else arg2
 
         if bound1 is not None and bound2 is not None:
             if (bound1, predicate, bound2) in graph:
@@ -81,9 +103,9 @@ def _match_atom(graph: Graph, atom: dict, binding: dict) -> list[dict]:
                 second = _unify(first, arg2, bound2)
                 return [second] if second is not None else []
 
-        if bound1 is not None and isinstance(arg2, Variable):
+        if bound1 is not None and _is_var(arg2):
             pairs = ((bound1, obj) for obj in graph.objects(bound1, predicate))
-        elif bound2 is not None and isinstance(arg1, Variable):
+        elif bound2 is not None and _is_var(arg1):
             pairs = ((subj, bound2) for subj in graph.subjects(predicate, bound2))
         else:
             pairs = ((subj, obj) for subj, obj in graph.subject_objects(predicate))
@@ -97,11 +119,19 @@ def _match_atom(graph: Graph, atom: dict, binding: dict) -> list[dict]:
                 results.append(second)
         return results
 
+    if atom["kind"] == "different":
+        arg1, arg2 = atom["arg1"], atom["arg2"]
+        val1 = binding.get(arg1) if _is_var(arg1) else arg1
+        val2 = binding.get(arg2) if _is_var(arg2) else arg2
+        if val1 is not None and val2 is not None and val1 != val2:
+            return [binding]
+        return []
+
     return []
 
 
 def _instantiate(term, binding: dict):
-    if isinstance(term, Variable):
+    if _is_var(term):
         return binding.get(term)
     return term
 
@@ -123,10 +153,9 @@ def apply_swrl(graph: Graph, rules: Graph, max_iterations: int = 20) -> dict[str
             if any(atom["kind"] == "unsupported" for atom in body + head):
                 continue
 
-            # Atomi di proprietà prima di quelli di classe: una congiunzione non
-            # dipende dall'ordine, ma Persona(?a) ^ Persona(?b) per primi sarebbe
-            # un prodotto cartesiano. (sorted è stabile.)
-            body.sort(key=lambda atom: atom["kind"] != "property")
+            # Ordine di valutazione: proprietà prima, poi classi, infine vincoli different.
+            order = {"property": 0, "class": 1, "different": 2}
+            body.sort(key=lambda atom: order.get(atom["kind"], 3))
             bindings: list[dict] = [{}]
             for atom in body:
                 next_bindings: list[dict] = []

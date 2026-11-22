@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 import logging
 
-from rdflib import Dataset
+from rdflib import Dataset, Graph
 
 from .config import (
     CATALOG_PATH,
+    CORE_TTL,
     CT,
     GENERATED_DIR,
+    INFERRED_TTL,
     ONTOLOGY_DIR,
     RAW_DIR,
     SCHEMA_DIR,
@@ -54,6 +56,9 @@ def _read_optional_json(name: str) -> dict:
 
 def _load_ontology(dataset: Dataset) -> None:
     graph = dataset.graph(CT.Ontology)
+    if CORE_TTL.exists():
+        graph.parse(str(CORE_TTL), format="turtle")
+        return
     graph.parse(ONTOLOGY_DIR / "cinetrope.ttl", format="turtle")
     # dl-axioms.ttl resta fuori dal dataset: OWL RL ne genererebbe sameAs spuri.
     for module in sorted(SCHEMA_DIR.glob("*.ttl")):
@@ -330,3 +335,118 @@ def dataset_stats(dataset: Dataset) -> dict:
         "triples": sum(len(dataset.graph(graph_id)) for graph_id in dataset.graphs()),
         "named_graphs": len(list(dataset.graphs())),
     }
+
+
+# ---------------------------------------------------------------------------
+# Ontologia ristretta (top-100 film, costruita dal notebook build_ontology.ipynb)
+# ---------------------------------------------------------------------------
+
+def build_from_core(write: bool = False) -> Dataset:
+    """Carica l'ontologia ristretta core.ttl + inferenze HermiT da inferred.ttl.
+
+    Legge core.ttl come unica sorgente di verità e distribuisce le triple nei
+    named graph di provenienza (:Ontology, :TMDB, :Wikidata, :DBpedia, :Inferred)
+    in modo che tutte le query SPARQL e gli endpoint FastAPI continuino a
+    funzionare invariati.
+    """
+    from rdflib import OWL, RDF, RDFS, BNode, Literal
+
+    from .config import STORE_PATH, SWRL
+
+    if not CORE_TTL.exists():
+        raise FileNotFoundError(
+            f"core.ttl non trovato: {CORE_TTL}. "
+            "Esegui il notebook notebooks/build_ontology.ipynb prima di avviare il backend."
+        )
+
+    log.info("etl: carico ontologia ristretta da %s", CORE_TTL)
+    raw = Graph()
+    raw.parse(str(CORE_TTL), format="turtle")
+
+    dataset = Dataset(default_union=True)
+    dataset.bind("", CT)
+
+    onto_g = dataset.graph(CT.Ontology)
+    tmdb_g = dataset.graph(CT.TMDB)
+    wiki_g = dataset.graph(CT.Wikidata)
+    dbp_g = dataset.graph(CT.DBpedia)
+
+    tbox_types = {
+        OWL.Ontology,
+        OWL.Class,
+        OWL.ObjectProperty,
+        OWL.DatatypeProperty,
+        OWL.AnnotationProperty,
+        OWL.FunctionalProperty,
+        OWL.SymmetricProperty,
+        OWL.AsymmetricProperty,
+        OWL.IrreflexiveProperty,
+        OWL.TransitiveProperty,
+        OWL.AllDisjointClasses,
+        OWL.AllDifferent,
+        OWL.Restriction,
+        RDFS.Datatype,
+        SWRL.Imp,
+        SWRL.Variable,
+        SWRL.AtomList,
+        SWRL.ClassAtom,
+        SWRL.IndividualPropertyAtom,
+        SWRL.DatavaluedPropertyAtom,
+        SWRL.DifferentIndividualsAtom,
+        SWRL.BuiltinAtom,
+        CT.Fonte,
+        CT.Premio,
+    }
+    tbox_subjects = {
+        s for t in tbox_types for s in raw.subjects(RDF.type, t)
+    }
+
+    for s, p, o in raw:
+        if p in (CT.hasAward, CT.awardCode) or (
+            p == OWL.sameAs and str(o).startswith("http://www.wikidata.org/entity/")
+        ):
+            wiki_g.add((s, p, o))
+        elif p in (CT.birthDate, CT.birthYear) or (
+            p == OWL.sameAs and str(o).startswith("http://dbpedia.org/resource/")
+        ):
+            dbp_g.add((s, p, o))
+        elif isinstance(s, BNode) or s in tbox_subjects:
+            onto_g.add((s, p, o))
+        else:
+            tmdb_g.add((s, p, o))
+
+    # Garantisce che tutti i named graph siano dichiarati come :Fonte in :Ontology
+    for src, label in (
+        (CT.Ontology, "Ontologia"),
+        (CT.TMDB, "TMDB"),
+        (CT.Wikidata, "Wikidata"),
+        (CT.DBpedia, "DBpedia"),
+        (CT.Inferred, "Inferenze"),
+    ):
+        onto_g.add((src, RDF.type, CT.Fonte))
+        if (src, RDFS.label, None) not in onto_g:
+            onto_g.add((src, RDFS.label, Literal(label)))
+
+    log.info(
+        "etl: core.ttl caricato (Ontology=%d, TMDB=%d, Wikidata=%d, DBpedia=%d)",
+        len(onto_g),
+        len(tmdb_g),
+        len(wiki_g),
+        len(dbp_g),
+    )
+
+    # Named graph :Inferred — inferenze HermiT (opzionale)
+    if INFERRED_TTL.exists() and INFERRED_TTL.stat().st_size > 0:
+        inf_graph = dataset.graph(CT.Inferred)
+        inf_graph.parse(str(INFERRED_TTL), format="turtle")
+        log.info("etl: inferred.ttl caricato (%d triple)", len(inf_graph))
+    else:
+        log.warning(
+            "etl: inferred.ttl non trovato — le classi definite verranno inferite via fallback."
+        )
+
+    if write:
+        GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+        dataset.serialize(destination=str(STORE_PATH), format="trig")
+
+    return dataset

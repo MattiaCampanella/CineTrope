@@ -12,14 +12,16 @@ from rdflib import RDF, RDFS, Dataset, Graph, Literal, URIRef
 from tqdm import tqdm
 
 from .config import (
+    CORE_TTL,
     CT,
     GENERATED_DIR,
     IMAGES_PATH,
+    INFERRED_TTL,
     REPORT_PATH,
     STORE_PATH,
     TMDB_IMAGE_BASE,
 )
-from .etl import build_catalog, dataset_stats
+from .etl import build_from_core, dataset_stats
 from .queries import COMPETENCY_QUESTIONS, render_named_query, render_query
 from .reasoning import DEFINED_CLASSES, run_reasoning, validation_checks
 from .search import SuggestIndex
@@ -109,19 +111,23 @@ class CineTropeStore:
     @classmethod
     def load_or_build(cls, rebuild: bool = False) -> "CineTropeStore":
         if STORE_PATH.exists() and not rebuild:
-            dataset = Dataset(default_union=True)
-            dataset.parse(STORE_PATH, format="trig")
-            return cls(dataset)
+            store_mtime = STORE_PATH.stat().st_mtime
+            inputs = [p for p in (CORE_TTL, INFERRED_TTL) if p.exists()]
+            if not inputs or store_mtime >= max(p.stat().st_mtime for p in inputs):
+                dataset = Dataset(default_union=True)
+                dataset.parse(STORE_PATH, format="trig")
+                return cls(dataset)
+            log.info("store: core.ttl o inferred.ttl aggiornati, ricostruisco lo store")
         return cls.rebuild()
 
     @classmethod
     def rebuild(cls) -> "CineTropeStore":
         GENERATED_DIR.mkdir(parents=True, exist_ok=True)
-        log.info("store: avvio la build completa")
-        steps = tqdm(total=3, desc="Store: ETL", unit="fase")
-        dataset = build_catalog(write=True)
+        log.info("store: avvio la build da core.ttl + inferred.ttl")
+        steps = tqdm(total=3, desc="Store: carica core.ttl", unit="fase")
+        dataset = build_from_core(write=False)
         steps.update()
-        steps.set_description("Store: inferenza OWL RL + SWRL")
+        steps.set_description("Store: inferenze HermiT / fallback")
         reasoning_report = run_reasoning(dataset)
         steps.update()
         steps.set_description("Store: validazione")
@@ -551,19 +557,16 @@ class CineTropeStore:
             return chosen
 
         specs = [
-            ("tropes", "I più ricchi di tropi", lambda c: True),
-            (
-                "speculative",
-                "Narrativa speculativa",
-                lambda c: "SpeculativeFilm" in c["classes"],
-            ),
+            ("awarded", "Premi Oscar Miglior Film", lambda c: "AwardedFilm" in c["classes"]),
+            ("acclaimed_blockbuster", "Blockbuster acclamati", lambda c: "AcclaimedBlockbuster" in c["classes"]),
+            ("premio", "Corali acclamati & profittevoli (SWRL)", lambda c: "PremioFilm" in c["classes"]),
+            ("profitable", "Film profittevoli (ROI ≥ 2×)", lambda c: "ProfitableFilm" in c["classes"]),
+            ("notable", "Film notevoli (owl:unionOf)", lambda c: "NotableFilm" in c["classes"]),
+            ("acclaimed", "Film acclamati", lambda c: "AcclaimedFilm" in c["classes"]),
+            ("epic", "Film kolossal", lambda c: "EpicFilm" in c["classes"]),
+            ("collection", "Franchise e collezioni", lambda c: "CollectionFilm" in c["classes"]),
             ("ensemble", "Film corali", lambda c: "EnsembleFilm" in c["classes"]),
-            (
-                "auteur",
-                "Registi con collaboratori fissi",
-                lambda c: "AuteurFilm" in c["classes"],
-            ),
-            ("classic", "Classici", lambda c: "ClassicFilm" in c["classes"]),
+            ("tropes", "I più ricchi di tropi", lambda c: True),
         ]
         genre_counts: Counter = Counter(g for c in cards.values() for g in c["genres"])
         specs += [
@@ -571,7 +574,14 @@ class CineTropeStore:
             for genre, _ in genre_counts.most_common(6)
         ]
         rows = [{"id": i, "title": t, "items": take(p)} for i, t, p in specs]
-        return {"hero": hero, "rows": [r for r in rows if len(r["items"]) >= 4]}
+        return {
+            "hero": hero,
+            "rows": [
+                r
+                for r in rows
+                if len(r["items"]) >= (1 if r["id"] == "awarded" else 3)
+            ],
+        }
 
     @lru_cache(maxsize=1024)
     def film_page(self, film_id: str, priority: str = "balanced") -> dict | None:

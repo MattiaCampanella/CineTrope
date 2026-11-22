@@ -1,5 +1,9 @@
 PREFIX : <http://example.org/cinetrope#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-# CQ: quali film appartengono alla classe definita SpeculativeFilm (OWL RL o regola CONSTRUCT)?
-SELECT ?film ?title WHERE { ?film a :SpeculativeFilm ; rdfs:label ?title } ORDER BY ?title LIMIT 25
+# CQ: quali film appartengono alla classe definita AcclaimedBlockbuster (HermiT)?
+SELECT ?film ?title ?vote ?revenue WHERE {
+  ?film a :AcclaimedBlockbuster ; rdfs:label ?title .
+  OPTIONAL { ?film :voteAverage ?vote }
+  OPTIONAL { ?film :revenue ?revenue }
+} ORDER BY DESC(?vote) ?title LIMIT 25

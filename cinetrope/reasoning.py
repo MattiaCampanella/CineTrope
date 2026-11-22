@@ -7,24 +7,25 @@ from collections import Counter
 from owlrl import DeductiveClosure, OWLRL_Semantics
 from rdflib import OWL, RDF, BNode, Dataset, Graph
 
-from .config import CT, RULES_DIR
+from .config import CT, INFERRED_TTL, RULES_DIR
 from .swrl import apply_swrl, load_rule_graph
 
 log = logging.getLogger(__name__)
 
 DEFINED_CLASSES = (
-    "MindBender",
-    "SpeculativeFilm",
-    "CollectionFilm",
-    "SequelFilm",
-    "MultiGenreFilm",
-    "EnsembleFilm",
-    "AuteurFilm",
     "AcclaimedFilm",
     "Blockbuster",
     "EpicFilm",
-    "ClassicFilm",
-    "ItalianFilm",
+    "StandardLengthFilm",
+    "ProfitableFilm",
+    "BoxOfficeFlop",
+    "CollectionFilm",
+    "MultiGenreFilm",
+    "EnsembleFilm",
+    "AwardedFilm",
+    "AcclaimedBlockbuster",
+    "NotableFilm",
+    "PremioFilm",
 )
 
 
@@ -92,8 +93,80 @@ def _restore_heavy(graph: Graph, heavy: list[tuple]) -> None:
         graph.add((obj, predicate, subject))
 
 
+def _load_hermit_inferred(dataset: Dataset) -> dict | None:
+    """Carica le triple inferite pre-calcolate da HermiT (data/generated/inferred.ttl)."""
+    if not INFERRED_TTL.exists() or INFERRED_TTL.stat().st_size == 0:
+        return None
+
+    tmp = Graph()
+    tmp.parse(str(INFERRED_TTL), format="turtle")
+    if len(tmp) == 0:
+        return None
+
+    inferred_graph = dataset.graph(CT.Inferred)
+    for triple in tmp:
+        inferred_graph.add(triple)
+
+    log.info(
+        "reasoning: caricate %d triple pre-calcolate da HermiT (%s)",
+        len(inferred_graph),
+        INFERRED_TTL,
+    )
+    predicate_counts = Counter(
+        str(predicate).split("#")[-1] for _, predicate, _ in inferred_graph
+    )
+    return {
+        "reasoner": "HermiT (OWLReady2)",
+        "inferred_triples": len(inferred_graph),
+        "swrl_inferences": {
+            "SelfDirectedRoleRule": len(set(dataset.subjects(RDF.type, CT.AutoreInterprete))),
+            "FrequentCollaboratorRule": sum(
+                1 for _ in inferred_graph.triples((None, CT.hasFrequentCollaborator, None))
+            ),
+            "SequelDirectorRule": len(set(dataset.subjects(RDF.type, CT.SequelDirector))),
+            "VersatileAuteurRule": len(set(dataset.subjects(RDF.type, CT.VersatileAuteur))),
+            "SharedCollectionRule": sum(
+                1 for _ in inferred_graph.triples((None, CT.sameCollectionAs, None))
+            ),
+            "EnsembleAwardRule": len(set(dataset.subjects(RDF.type, CT.PremioFilm))),
+        },
+        "classification_rules": {},
+        "defined_classes": {
+            name: len(set(dataset.subjects(RDF.type, CT[name])))
+            for name in DEFINED_CLASSES
+        },
+        "person_classes": {
+            name: len(set(dataset.subjects(RDF.type, CT[name])))
+            for name in (
+                "Auteur",
+                "VeteranDirector",
+                "VeteranAuteur",
+                "RegistaAttore",
+                "AutoreInterprete",
+                "SequelDirector",
+                "VersatileAuteur",
+            )
+        },
+        "predicates": dict(predicate_counts.most_common(15)),
+        "mindbenders": len(set(dataset.subjects(RDF.type, CT.MindBender))),
+        "auteur_directors": len(set(dataset.subjects(RDF.type, CT.Auteur))),
+        "frequent_collaborator_links": sum(
+            1
+            for _ in inferred_graph.triples((None, CT.hasFrequentCollaborator, None))
+        ),
+    }
+
+
 def run_reasoning(dataset: Dataset) -> dict:
-    """Esegue OWL RL e SWRL, salvando tutte le nuove triple nel named graph :Inferred."""
+    """Carica le inferenze HermiT da inferred.ttl; se mancanti, usa owlrl come fallback."""
+    hermit_report = _load_hermit_inferred(dataset)
+    if hermit_report is not None:
+        return hermit_report
+
+    log.warning(
+        "reasoning: %s assente o vuoto, eseguo fallback con OWL RL + SWRL",
+        INFERRED_TTL,
+    )
     union = _union_graph(dataset)
     explicit = set(union)
 
@@ -108,7 +181,8 @@ def run_reasoning(dataset: Dataset) -> dict:
         "reasoning: prima passata OWL RL in %.0fs, applico le regole SWRL",
         time.time() - started,
     )
-    swrl_stats = apply_swrl(union, load_rule_graph())
+    rules = load_rule_graph()
+    swrl_stats = apply_swrl(union, rules) if len(rules) else {}
     log.info("reasoning: SWRL %s, seconda passata OWL RL", swrl_stats)
     started = time.time()
     heavy = _split_heavy(union)
@@ -118,7 +192,7 @@ def run_reasoning(dataset: Dataset) -> dict:
         "reasoning: seconda passata OWL RL in %.0fs, classi definite",
         time.time() - started,
     )
-    rule_stats = apply_classification_rules(union)
+    rule_stats = apply_classification_rules(union) if RULES_DIR.exists() else {}
     log.info("reasoning: classi definite da regole SPARQL %s", rule_stats)
 
     inferred = {
@@ -140,6 +214,7 @@ def run_reasoning(dataset: Dataset) -> dict:
         str(predicate).split("#")[-1] for _, predicate, _ in inferred
     )
     return {
+        "reasoner": "owlrl (fallback)",
         "inferred_triples": len(inferred),
         "swrl_inferences": swrl_stats,
         "classification_rules": rule_stats,
@@ -149,6 +224,7 @@ def run_reasoning(dataset: Dataset) -> dict:
         },
         "predicates": dict(predicate_counts.most_common(12)),
         "mindbenders": len(set(dataset.subjects(RDF.type, CT.MindBender))),
+        "auteur_directors": len(set(dataset.subjects(RDF.type, CT.Auteur))),
         "frequent_collaborator_links": sum(
             1
             for _ in dataset.graph(CT.Inferred).triples(

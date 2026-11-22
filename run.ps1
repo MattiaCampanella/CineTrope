@@ -27,9 +27,16 @@ if ($LASTEXITCODE -ne 0) {
     & $python -m pip install -r requirements.txt
 }
 
+$core = Join-Path $PSScriptRoot "data\ontology\core.ttl"
+if (-not (Test-Path $core)) {
+    Write-Host "Costruisco ontologia core.ttl + inferenze HermiT dal notebook..." -ForegroundColor Yellow
+    & $python scripts/pipeline.py core --force
+    if ($LASTEXITCODE -ne 0) { throw "Build di core.ttl fallito." }
+}
+
 $store = Join-Path $PSScriptRoot "data\generated\store.trig"
 if ($Rebuild -or -not (Test-Path $store)) {
-    Write-Host "Costruisco lo store (circa 3 minuti)..." -ForegroundColor Yellow
+    Write-Host "Costruisco lo store da core.ttl + inferred.ttl..." -ForegroundColor Yellow
     & $python scripts/pipeline.py store --force
     if ($LASTEXITCODE -ne 0) { throw "Build dello store fallito." }
 }

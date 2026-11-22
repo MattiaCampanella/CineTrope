@@ -20,8 +20,18 @@ STORE_PATH = GENERATED_DIR / "store.trig"
 CATALOG_PATH = GENERATED_DIR / "catalog.trig"
 REPORT_PATH = GENERATED_DIR / "build_report.json"
 
+# Nuova ontologia ristretta (top-100 film, costruita dal notebook)
+CORE_TTL = ONTOLOGY_DIR / "core.ttl"
+CORE_OWL = ONTOLOGY_DIR / "core.owl"
+CORE_SWRL_N3 = ONTOLOGY_DIR / "core.swrl.n3"
+INFERRED_TTL = GENERATED_DIR / "inferred.ttl"
+
 CT = Namespace("http://example.org/cinetrope#")
 SWRL = Namespace("http://www.w3.org/2003/11/swrl#")
+SWRLB = Namespace("http://www.w3.org/2003/11/swrlb#")
+SWRLA = Namespace("http://swrl.stanford.edu/ontologies/3.3/swrla.owl#")
+DBR = Namespace("http://dbpedia.org/resource/")
+WD = Namespace("http://www.wikidata.org/entity/")
 
 SOURCE_GRAPHS = {
     "Wikidata": CT.Wikidata,
@@ -31,6 +41,7 @@ SOURCE_GRAPHS = {
     "LocalAnalysis": CT.LocalAnalysis,
     "Derived": CT.Derived,
     "Inferred": CT.Inferred,
+    "Ontology": CT.Ontology,
 }
 
 SOURCE_LABELS = {
@@ -41,6 +52,7 @@ SOURCE_LABELS = {
     "LocalAnalysis": "Analisi locale",
     "Derived": "Dati derivati",
     "Inferred": "Inferenze",
+    "Ontology": "Ontologia",
 }
 
 REQUIRED_SOURCES = ("Wikidata", "DBpedia", "TMDB", "Derived", "Inferred")

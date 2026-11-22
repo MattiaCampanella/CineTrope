@@ -1,7 +1,7 @@
 PREFIX : <http://example.org/cinetrope#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-# CQ: quali film hanno almeno tre generi (cardinalità qualificata)?
+# CQ: quali film multigenere (MultiGenreFilm, hasGenre min 3 Genere) sono classificati da HermiT?
 SELECT ?title (COUNT(DISTINCT ?g) AS ?genres) WHERE {
   ?f a :MultiGenreFilm ; rdfs:label ?title ; :hasGenre ?g .
 } GROUP BY ?title ORDER BY DESC(?genres) ?title LIMIT 30

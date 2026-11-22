@@ -10,11 +10,12 @@ type Data = {
 
 const n = (v: number) => v.toLocaleString("it-IT");
 const ROLE: Record<string, string> = {
-  TMDB: "Film, cast, regia, generi e keyword.",
-  Wikidata: "Metadati strutturati delle persone.",
-  DBpedia: "Arricchimento federato (SERVICE): date di nascita.",
-  Derived: "Co-star e collaborazioni calcolate con SPARQL.",
-  Inferred: "Chiusura OWL RL, regole CONSTRUCT e SWRL.",
+  Ontology: "TBox OWL 2 DL, classi definite, assiomi DL e regole SWRL (core.ttl).",
+  TMDB: "Top-100 film per popolarità, cast, regia, generi e keyword.",
+  Wikidata: "Premi Oscar Best Picture recuperati via SPARQL.",
+  DBpedia: "Date di nascita dei registi recuperate via SPARQL.",
+  Derived: "Relazioni derivate tra entità.",
+  Inferred: "Classificazione OWL 2 DL e regole SWRL calcolate da HermiT (OWLReady2).",
   LocalAnalysis: "Generi e gerarchie curati.",
   TvTropes: "Tropi e scene annotate (non più popolata).",
 };
